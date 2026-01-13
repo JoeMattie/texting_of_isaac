@@ -1,6 +1,7 @@
 import pytest
 from src.components.core import Position, Velocity, Health, Sprite
 from src.components.combat import Stats, Collider, Projectile
+from src.components.game import Player, Enemy, Item, AIBehavior, Invincible
 
 
 def test_position_stores_coordinates():
@@ -126,3 +127,46 @@ def test_projectile_validates_positive_damage():
     # Zero damage should be valid edge case
     projectile = Projectile(damage=0.0, owner=0)
     assert projectile.damage == 0.0
+
+
+# Game component tests
+
+
+def test_player_is_marker_component():
+    player = Player()
+    assert isinstance(player, Player)
+
+
+def test_enemy_stores_type():
+    enemy = Enemy("chaser")
+    assert enemy.type == "chaser"
+
+
+def test_item_stores_effects():
+    item = Item(
+        name="Speed Shoes",
+        stat_modifiers={"speed": 1.5},
+        special_effects=[]
+    )
+    assert item.name == "Speed Shoes"
+    assert item.stat_modifiers["speed"] == 1.5
+
+
+def test_ai_behavior_tracks_cooldowns():
+    ai = AIBehavior(pattern_cooldowns={"shoot": 2.0})
+    assert ai.pattern_cooldowns["shoot"] == 2.0
+
+
+def test_invincible_has_duration():
+    invincible = Invincible(0.5)
+    assert invincible.remaining == 0.5
+
+
+def test_invincible_validates_positive_duration():
+    # Test negative duration
+    with pytest.raises(ValueError, match="duration must be positive"):
+        Invincible(-1.0)
+
+    # Zero duration should be valid edge case
+    invincible = Invincible(0.0)
+    assert invincible.remaining == 0.0
