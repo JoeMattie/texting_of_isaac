@@ -1,5 +1,6 @@
 import pytest
 from src.components.core import Position, Velocity, Health, Sprite
+from src.components.combat import Stats, Collider, Projectile
 
 
 def test_position_stores_coordinates():
@@ -61,3 +62,67 @@ def test_sprite_validates_char_length():
     # Single character should work
     sprite = Sprite('X', 'green')
     assert sprite.char == 'X'
+
+
+# Combat component tests
+
+
+def test_stats_stores_combat_values():
+    stats = Stats(speed=5.0, damage=2.0, fire_rate=3.0, shot_speed=8.0)
+    assert stats.speed == 5.0
+    assert stats.damage == 2.0
+    assert stats.fire_rate == 3.0
+    assert stats.shot_speed == 8.0
+
+
+def test_collider_has_radius():
+    collider = Collider(0.5)
+    assert collider.radius == 0.5
+
+
+def test_projectile_stores_damage_and_owner():
+    projectile = Projectile(damage=2, owner=42)
+    assert projectile.damage == 2
+    assert projectile.owner == 42
+
+
+def test_stats_validates_positive_values():
+    # Test negative speed
+    with pytest.raises(ValueError, match="speed must be positive"):
+        Stats(speed=-1.0, damage=2.0, fire_rate=3.0, shot_speed=8.0)
+
+    # Test negative damage
+    with pytest.raises(ValueError, match="damage must be positive"):
+        Stats(speed=5.0, damage=-1.0, fire_rate=3.0, shot_speed=8.0)
+
+    # Test negative fire_rate
+    with pytest.raises(ValueError, match="fire_rate must be positive"):
+        Stats(speed=5.0, damage=2.0, fire_rate=-1.0, shot_speed=8.0)
+
+    # Test negative shot_speed
+    with pytest.raises(ValueError, match="shot_speed must be positive"):
+        Stats(speed=5.0, damage=2.0, fire_rate=3.0, shot_speed=-1.0)
+
+    # Zero values should be valid edge case
+    stats = Stats(speed=0.0, damage=0.0, fire_rate=0.0, shot_speed=0.0)
+    assert stats.speed == 0.0
+
+
+def test_collider_validates_positive_radius():
+    # Test negative radius
+    with pytest.raises(ValueError, match="radius must be positive"):
+        Collider(-1.0)
+
+    # Test zero radius (edge case - should be valid)
+    collider = Collider(0.0)
+    assert collider.radius == 0.0
+
+
+def test_projectile_validates_positive_damage():
+    # Test negative damage
+    with pytest.raises(ValueError, match="damage must be positive"):
+        Projectile(damage=-1.0, owner=42)
+
+    # Zero damage should be valid edge case
+    projectile = Projectile(damage=0.0, owner=0)
+    assert projectile.damage == 0.0
