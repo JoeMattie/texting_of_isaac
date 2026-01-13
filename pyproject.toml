@@ -1,0 +1,11 @@
+[project]
+name = "texting-of-isaac"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "esper>=3.0.0",
+    "pytest>=7.0.0",
+    "rich>=13.0.0",
+]

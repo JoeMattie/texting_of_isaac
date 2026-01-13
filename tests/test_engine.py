@@ -2,6 +2,7 @@
 import pytest
 import esper
 from src.game.engine import GameEngine
+from src.entities.player import create_player
 
 
 def test_game_engine_creates_world():
@@ -25,3 +26,22 @@ def test_game_engine_can_stop():
     engine = GameEngine()
     engine.stop()
     assert engine.running is False
+
+
+def test_game_engine_has_all_systems():
+    """Test that GameEngine registers all systems."""
+    engine = GameEngine()
+    # Check systems are registered
+    assert len(engine.world._processors) > 0
+
+
+def test_game_engine_runs_game_loop():
+    """Test that GameEngine can run game loop without crashing."""
+    engine = GameEngine()
+    # Create player
+    player = create_player(engine.world_name, 30.0, 10.0)
+    # Run a few frames
+    for _ in range(10):
+        engine.update(0.016)
+    # Should not crash
+    assert True
