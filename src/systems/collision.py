@@ -93,7 +93,28 @@ class CollisionSystem(esper.Processor):
             esper.delete_entity(enemy)
 
     def _projectile_hit_player(self, projectile: int, player: int):
-        """Handle projectile hitting player."""
-        # TODO: Check invincibility, apply damage
-        # For now just remove projectile
+        """Handle enemy projectile hitting player."""
+        from src.components.game import Invincible, Dead
+        from src.config import Config
+
+        # Check invincibility
+        if esper.has_component(player, Invincible):
+            esper.delete_entity(projectile)  # Remove projectile but no damage
+            return
+
+        # Get projectile damage
+        proj = esper.component_for_entity(projectile, Projectile)
+        health = esper.component_for_entity(player, Health)
+
+        # Apply damage
+        health.current -= proj.damage
+
+        # Add invincibility
+        esper.add_component(player, Invincible(Config.INVINCIBILITY_DURATION))
+
+        # Remove projectile
         esper.delete_entity(projectile)
+
+        # Check for death
+        if health.current <= 0:
+            esper.add_component(player, Dead())
