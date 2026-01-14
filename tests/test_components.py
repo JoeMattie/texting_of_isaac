@@ -1,7 +1,7 @@
 import pytest
 from src.components.core import Position, Velocity, Health, Sprite
 from src.components.combat import Stats, Collider, Projectile
-from src.components.game import Player, Enemy, Item, AIBehavior, Invincible
+from src.components.game import Player, Enemy, Item, AIBehavior, Invincible, Dead
 
 
 def test_position_stores_coordinates():
@@ -190,3 +190,9 @@ def test_ai_behavior_pattern_index_validation():
     """Test AIBehavior validates pattern_index is non-negative."""
     with pytest.raises(ValueError, match="pattern_index must be non-negative"):
         AIBehavior(pattern_cooldowns={}, pattern_index=-1)
+
+
+def test_dead_is_marker_component():
+    """Test Dead component is a simple marker."""
+    dead = Dead()
+    assert repr(dead) == "Dead()"

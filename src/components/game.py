@@ -67,3 +67,10 @@ class Invincible:
 
     def __repr__(self) -> str:
         return f"Invincible(duration={self.remaining})"
+
+
+class Dead:
+    """Marker component indicating entity has died."""
+
+    def __repr__(self) -> str:
+        return "Dead()"
