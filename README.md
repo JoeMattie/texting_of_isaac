@@ -4,7 +4,7 @@ A TUI (Terminal User Interface) roguelike game inspired by The Binding of Isaac,
 
 ![Version](https://img.shields.io/badge/version-0.1.0--alpha-orange)
 ![Python](https://img.shields.io/badge/python-3.12%2B-blue)
-![Tests](https://img.shields.io/badge/tests-62%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-81%20passing-brightgreen)
 
 ## 🎮 What is This?
 
@@ -19,16 +19,18 @@ Texting of Isaac is a bullet-hell roguelike rendered entirely in ASCII/Unicode c
 - **Combat System** - Fire projectiles with cooldown-based fire rate
 - **Enemy AI** - Multiple enemy types with different behaviors:
   - Chasers that pursue the player
-  - Shooters that stay stationary
-  - Tanks, Orbiters, and Turrets (basic implementation)
-- **Collision Detection** - Circle-based physics with damage system
+  - Shooters that fire aimed shots and spread patterns
+  - Orbiters that snipe and create radial bursts
+  - Turrets that spray and create cross patterns
+  - Tanks that fire shockwave patterns
+- **Enemy Shooting** - Enemies fire back with varied attack patterns
+- **Collision Detection** - Circle-based physics with bidirectional damage
 - **Rich TUI Rendering** - Beautiful terminal interface with colors
 - **Room Generation** - Procedural obstacle placement
-- **5 Enemy Types** - Diverse enemy roster with unique stats
-- **Comprehensive Tests** - 62 unit tests ensuring code quality
+- **5 Enemy Types** - Diverse enemy roster with unique stats and patterns
+- **Comprehensive Tests** - 81 unit tests ensuring code quality
 
 ### 🚧 In Progress / Planned
-- Enemy shooting (enemies currently don't fire back)
 - Player damage and health system integration
 - Item pickup and stat modification system
 - Multi-room dungeon progression
@@ -92,8 +94,9 @@ texting_of_isaac/
 │   ├── systems/           # ECS systems (game logic)
 │   │   ├── input.py       # Player input handling
 │   │   ├── movement.py    # Physics and movement
-│   │   ├── shooting.py    # Projectile creation
+│   │   ├── shooting.py    # Player projectile creation
 │   │   ├── ai.py          # Enemy AI behaviors
+│   │   ├── enemy_shooting.py # Enemy projectile creation
 │   │   ├── collision.py   # Collision detection & damage
 │   │   └── render.py      # Grid-based rendering
 │   ├── entities/          # Entity factory functions
@@ -103,7 +106,7 @@ texting_of_isaac/
 │   │   ├── engine.py      # Main game engine & ECS world
 │   │   └── room.py        # Room generation & management
 │   └── config.py          # Game constants and configuration
-├── tests/                 # Unit tests (62 tests)
+├── tests/                 # Unit tests (81 tests)
 └── docs/
     └── plans/             # Design documents
 ```
@@ -166,7 +169,6 @@ Benefits:
 ## 🐛 Known Issues
 
 - Player is currently invincible (damage system not fully integrated)
-- Enemies don't shoot projectiles yet
 - Single room only (no dungeon progression)
 - No item pickups implemented
 - Projectiles can go off-screen indefinitely
@@ -195,7 +197,7 @@ This project is open source and available under the MIT License.
 - [x] Player movement and shooting
 - [x] Enemy AI
 - [x] Collision detection
-- [ ] Enemy shooting patterns
+- [x] Enemy shooting patterns
 - [ ] Player damage system
 
 **Phase 2: Progression**
