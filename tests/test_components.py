@@ -170,3 +170,23 @@ def test_invincible_validates_positive_duration():
     # Zero duration should be valid edge case
     invincible = Invincible(0.0)
     assert invincible.remaining == 0.0
+
+
+def test_ai_behavior_with_pattern_index():
+    """Test AIBehavior component with pattern_index."""
+    cooldowns = {"aimed": 2.0, "spread": 3.0}
+    ai = AIBehavior(pattern_cooldowns=cooldowns, pattern_index=0)
+    assert ai.pattern_cooldowns == cooldowns
+    assert ai.pattern_index == 0
+
+
+def test_ai_behavior_pattern_index_defaults_to_zero():
+    """Test AIBehavior pattern_index defaults to 0."""
+    ai = AIBehavior(pattern_cooldowns={})
+    assert ai.pattern_index == 0
+
+
+def test_ai_behavior_pattern_index_validation():
+    """Test AIBehavior validates pattern_index is non-negative."""
+    with pytest.raises(ValueError, match="pattern_index must be non-negative"):
+        AIBehavior(pattern_cooldowns={}, pattern_index=-1)

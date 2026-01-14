@@ -1,4 +1,5 @@
 """Game-specific ECS components."""
+from dataclasses import dataclass
 from typing import Dict, List
 
 
@@ -31,14 +32,29 @@ class Item:
         return f"Item(name={self.name!r}, stat_modifiers={self.stat_modifiers!r}, special_effects={self.special_effects!r})"
 
 
+@dataclass
 class AIBehavior:
-    """AI state and cooldowns for enemy behavior."""
+    """AI behavior component for enemies.
 
-    def __init__(self, pattern_cooldowns: Dict[str, float]) -> None:
-        self.pattern_cooldowns: Dict[str, float] = pattern_cooldowns
+    Attributes:
+        pattern_cooldowns: Dict mapping pattern names to cooldown times
+        pattern_index: Current pattern index for sequential cycling
+    """
+    pattern_cooldowns: Dict[str, float]
+    pattern_index: int = 0
 
-    def __repr__(self) -> str:
-        return f"AIBehavior(pattern_cooldowns={self.pattern_cooldowns!r})"
+    def __post_init__(self):
+        """Validate component data."""
+        if not isinstance(self.pattern_cooldowns, dict):
+            raise TypeError("pattern_cooldowns must be a dictionary")
+        if not all(isinstance(k, str) for k in self.pattern_cooldowns.keys()):
+            raise TypeError("pattern_cooldowns keys must be strings")
+        if not all(isinstance(v, (int, float)) for v in self.pattern_cooldowns.values()):
+            raise TypeError("pattern_cooldowns values must be numeric")
+        if not isinstance(self.pattern_index, int):
+            raise TypeError("pattern_index must be an integer")
+        if self.pattern_index < 0:
+            raise ValueError("pattern_index must be non-negative")
 
 
 class Invincible:
