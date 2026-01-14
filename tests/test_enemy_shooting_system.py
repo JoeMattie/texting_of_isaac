@@ -17,7 +17,7 @@ def test_enemy_shooting_system_exists():
 
 def test_creates_single_aimed_bullet():
     """Test enemy creates single bullet aimed at player."""
-    esper.switch_world("test_world")
+    esper.switch_world("test_aimed")
     esper.clear_database()
 
     # Create player at (20, 10)
@@ -64,7 +64,7 @@ def test_creates_single_aimed_bullet():
 
 def test_creates_spread_bullets():
     """Test enemy creates spread of 3 bullets."""
-    esper.switch_world("test_world")
+    esper.switch_world("test_spread")
     esper.clear_database()
 
     # Create player
@@ -106,7 +106,7 @@ def test_creates_spread_bullets():
 
 def test_creates_ring_bullets():
     """Test enemy creates ring of 8 bullets radiating outward."""
-    esper.switch_world("test_world")
+    esper.switch_world("test_ring")
     esper.clear_database()
 
     # Create player (position doesn't matter for ring)
@@ -145,7 +145,7 @@ def test_creates_ring_bullets():
 
 def test_pattern_cycles_through_list():
     """Test enemy cycles through patterns sequentially."""
-    esper.switch_world("test_world")
+    esper.switch_world("test_cycling")
     esper.clear_database()
 
     player = esper.create_entity()
@@ -184,7 +184,7 @@ def test_pattern_cycles_through_list():
 
 def test_single_pattern_stays_at_zero():
     """Test enemy with one pattern keeps pattern_index at 0."""
-    esper.switch_world("test_world")
+    esper.switch_world("test_single")
     esper.clear_database()
 
     player = esper.create_entity()
@@ -212,7 +212,7 @@ def test_single_pattern_stays_at_zero():
 
 def test_respects_cooldown_timer():
     """Test enemy doesn't shoot until cooldown expires."""
-    esper.switch_world("test_world")
+    esper.switch_world("test_cooldown")
     esper.clear_database()
 
     player = esper.create_entity()
@@ -242,7 +242,7 @@ def test_respects_cooldown_timer():
 
 def test_enemy_projectiles_have_correct_owner():
     """Test enemy projectiles reference their creator."""
-    esper.switch_world("test_world")
+    esper.switch_world("test_owner")
     esper.clear_database()
 
     player = esper.create_entity()
