@@ -77,6 +77,12 @@ class CollisionSystem(esper.Processor):
             if esper.entity_exists(proj.owner) and esper.has_component(proj.owner, Enemy):
                 self._projectile_hit_player(e2, e1)
 
+        # Enemy touching player (contact damage)
+        if esper.has_component(e1, Enemy) and esper.has_component(e2, Player):
+            self._enemy_contact_player(e1, e2)
+        elif esper.has_component(e2, Enemy) and esper.has_component(e1, Player):
+            self._enemy_contact_player(e2, e1)
+
     def _projectile_hit_enemy(self, projectile: int, enemy: int):
         """Handle projectile hitting enemy."""
         proj = esper.component_for_entity(projectile, Projectile)
@@ -114,6 +120,25 @@ class CollisionSystem(esper.Processor):
 
         # Remove projectile
         esper.delete_entity(projectile)
+
+        # Check for death
+        if health.current <= 0:
+            esper.add_component(player, Dead())
+
+    def _enemy_contact_player(self, enemy: int, player: int):
+        """Handle enemy touching player (contact damage)."""
+        from src.components.game import Invincible, Dead
+        from src.config import Config
+
+        # Check invincibility
+        if esper.has_component(player, Invincible):
+            return  # No damage while invincible
+
+        health = esper.component_for_entity(player, Health)
+        health.current -= 1.0  # Contact damage = 1 heart
+
+        # Add invincibility frames
+        esper.add_component(player, Invincible(Config.INVINCIBILITY_DURATION))
 
         # Check for death
         if health.current <= 0:

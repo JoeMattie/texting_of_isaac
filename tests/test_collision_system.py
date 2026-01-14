@@ -3,7 +3,7 @@ import esper
 from src.systems.collision import CollisionSystem
 from src.components.core import Position, Health
 from src.components.combat import Collider, Projectile
-from src.components.game import Player, Enemy
+from src.components.game import Player, Enemy, Dead
 from src.config import Config
 
 
@@ -225,3 +225,94 @@ def test_projectile_respects_invincibility():
 
     # Verify projectile still removed
     assert not esper.entity_exists(projectile)
+
+
+def test_enemy_contact_damages_player():
+    """Test touching enemy deals 1 damage."""
+    esper.switch_world("test_enemy_contact")
+    esper.clear_database()
+
+    # Create player with 3 HP
+    player = esper.create_entity()
+    esper.add_component(player, Player())
+    esper.add_component(player, Position(10.0, 10.0))
+    esper.add_component(player, Health(3, 6))
+    esper.add_component(player, Collider(0.5))
+
+    # Create enemy overlapping player
+    enemy = esper.create_entity()
+    esper.add_component(enemy, Enemy("chaser"))
+    esper.add_component(enemy, Position(10.0, 10.0))
+    esper.add_component(enemy, Collider(0.5))
+
+    # Process collision
+    system = CollisionSystem()
+    esper.add_processor(system)
+    esper.process()
+
+    # Verify damage dealt
+    health = esper.component_for_entity(player, Health)
+    assert health.current == 2.0
+
+    # Verify invincibility granted
+    from src.components.game import Invincible
+    assert esper.has_component(player, Invincible)
+
+
+def test_enemy_contact_respects_invincibility():
+    """Test touching enemy while invincible doesn't damage."""
+    esper.switch_world("test_enemy_contact_invincible")
+    esper.clear_database()
+
+    # Create invincible player
+    player = esper.create_entity()
+    esper.add_component(player, Player())
+    esper.add_component(player, Position(10.0, 10.0))
+    esper.add_component(player, Health(3, 6))
+    esper.add_component(player, Collider(0.5))
+    from src.components.game import Invincible
+    esper.add_component(player, Invincible(0.3))
+
+    # Create enemy overlapping player
+    enemy = esper.create_entity()
+    esper.add_component(enemy, Enemy("chaser"))
+    esper.add_component(enemy, Position(10.0, 10.0))
+    esper.add_component(enemy, Collider(0.5))
+
+    # Process collision
+    system = CollisionSystem()
+    esper.add_processor(system)
+    esper.process()
+
+    # Verify no damage dealt
+    health = esper.component_for_entity(player, Health)
+    assert health.current == 3.0
+
+
+def test_enemy_contact_kills_player():
+    """Test contact damage adds Dead component when health reaches 0."""
+    esper.switch_world("test_enemy_contact_death")
+    esper.clear_database()
+
+    # Create player with 1 HP
+    player = esper.create_entity()
+    esper.add_component(player, Player())
+    esper.add_component(player, Position(10.0, 10.0))
+    esper.add_component(player, Health(1, 6))
+    esper.add_component(player, Collider(0.5))
+
+    # Create enemy overlapping player
+    enemy = esper.create_entity()
+    esper.add_component(enemy, Enemy("chaser"))
+    esper.add_component(enemy, Position(10.0, 10.0))
+    esper.add_component(enemy, Collider(0.5))
+
+    # Process collision
+    system = CollisionSystem()
+    esper.add_processor(system)
+    esper.process()
+
+    # Verify death
+    health = esper.component_for_entity(player, Health)
+    assert health.current <= 0
+    assert esper.has_component(player, Dead)
