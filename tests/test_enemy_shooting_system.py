@@ -60,3 +60,45 @@ def test_creates_single_aimed_bullet():
     assert vel.dy == pytest.approx(0.0)  # Same y-coordinate
     assert sprite.char == '*'
     assert sprite.color == 'yellow'
+
+
+def test_creates_spread_bullets():
+    """Test enemy creates spread of 3 bullets."""
+    esper.switch_world("test_world")
+    esper.clear_database()
+
+    # Create player
+    player = esper.create_entity()
+    esper.add_component(player, Player())
+    esper.add_component(player, Position(20.0, 10.0))
+
+    # Create enemy with spread pattern as current (index 1)
+    enemy = esper.create_entity()
+    esper.add_component(enemy, Enemy("shooter"))
+    esper.add_component(enemy, Position(10.0, 10.0))
+    esper.add_component(enemy, AIBehavior(
+        pattern_cooldowns={"aimed": 1.0, "spread": 0.0},  # spread ready
+        pattern_index=1  # Points to "spread" pattern
+    ))
+
+    # Process shooting
+    system = EnemyShootingSystem()
+    system.dt = 0.1
+    esper.add_processor(system)
+    esper.process()
+
+    # Should create 3 projectiles
+    projectiles = [e for e, (proj,) in esper.get_components(Projectile)]
+    assert len(projectiles) == 3
+
+    # Verify angles are spread out
+    velocities = [esper.component_for_entity(p, Velocity) for p in projectiles]
+    angles = [math.atan2(v.dy, v.dx) for v in velocities]
+
+    # Angles should be different
+    assert angles[0] != angles[1]
+    assert angles[1] != angles[2]
+
+    # Should be spread around base direction
+    assert min(angles) < 0
+    assert max(angles) > 0
