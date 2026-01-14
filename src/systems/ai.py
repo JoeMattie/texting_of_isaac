@@ -24,6 +24,13 @@ class AISystem(esper.Processor):
 
         # Process each enemy
         for ent, (enemy, pos, vel) in esper.get_components(Enemy, Position, Velocity):
+            # Decrement pattern cooldowns if enemy has AI
+            if esper.has_component(ent, AIBehavior):
+                ai = esper.component_for_entity(ent, AIBehavior)
+                for pattern_name in ai.pattern_cooldowns:
+                    ai.pattern_cooldowns[pattern_name] -= self.dt
+
+            # Process movement AI
             if enemy.type == "chaser":
                 self._ai_chaser(pos, vel, player_pos)
             elif enemy.type == "shooter":
