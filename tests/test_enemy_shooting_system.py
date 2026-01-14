@@ -208,3 +208,33 @@ def test_single_pattern_stays_at_zero():
     ai = esper.component_for_entity(enemy, AIBehavior)
     # Should cycle: (0 + 1) % 1 = 0
     assert ai.pattern_index == 0
+
+
+def test_respects_cooldown_timer():
+    """Test enemy doesn't shoot until cooldown expires."""
+    esper.switch_world("test_world")
+    esper.clear_database()
+
+    player = esper.create_entity()
+    esper.add_component(player, Player())
+    esper.add_component(player, Position(20.0, 10.0))
+
+    enemy = esper.create_entity()
+    esper.add_component(enemy, Enemy("shooter"))
+    esper.add_component(enemy, Position(10.0, 10.0))
+    esper.add_component(enemy, AIBehavior(
+        pattern_cooldowns={"aimed": 2.0, "spread": 3.0},  # Not ready
+        pattern_index=0
+    ))
+
+    system = EnemyShootingSystem()
+    system.dt = 0.5
+    esper.add_processor(system)
+
+    # Process 3 times (1.5 seconds) - cooldown still > 0
+    for _ in range(3):
+        esper.process()
+
+    # No projectiles should be created (cooldown still > 0)
+    projectiles = list(esper.get_components(Projectile))
+    assert len(projectiles) == 0
