@@ -238,3 +238,40 @@ def test_respects_cooldown_timer():
     # No projectiles should be created (cooldown still > 0)
     projectiles = list(esper.get_components(Projectile))
     assert len(projectiles) == 0
+
+
+def test_enemy_projectiles_have_correct_owner():
+    """Test enemy projectiles reference their creator."""
+    esper.switch_world("test_world")
+    esper.clear_database()
+
+    player = esper.create_entity()
+    esper.add_component(player, Player())
+    esper.add_component(player, Position(20.0, 10.0))
+
+    enemy = esper.create_entity()
+    esper.add_component(enemy, Enemy("shooter"))
+    esper.add_component(enemy, Position(10.0, 10.0))
+    esper.add_component(enemy, AIBehavior(
+        pattern_cooldowns={"aimed": 0.0, "spread": 2.0},
+        pattern_index=0
+    ))
+
+    system = EnemyShootingSystem()
+    system.dt = 0.1
+    esper.add_processor(system)
+    esper.process()
+
+    # Check projectile properties
+    projectiles = [e for e, (proj,) in esper.get_components(Projectile)]
+    assert len(projectiles) == 1
+
+    proj_id = projectiles[0]
+    projectile = esper.component_for_entity(proj_id, Projectile)
+
+    from src.components.core import Sprite
+    sprite = esper.component_for_entity(proj_id, Sprite)
+
+    assert projectile.owner == enemy
+    assert sprite.char == '*'
+    assert sprite.color == 'yellow'
