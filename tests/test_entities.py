@@ -68,3 +68,28 @@ def test_create_enemy_shooter():
 
     # Shooter should have AI behavior
     assert esper.has_component(enemy_id, AIBehavior)
+
+
+def test_enemy_data_has_pattern_configs():
+    """Test ENEMY_DATA contains proper pattern configurations."""
+    from src.entities.enemies import ENEMY_DATA
+
+    # Chaser has no patterns
+    assert ENEMY_DATA["chaser"]["patterns"] == {}
+
+    # Shooter has aimed and spread patterns
+    shooter_patterns = ENEMY_DATA["shooter"]["patterns"]
+    assert "aimed" in shooter_patterns
+    assert "spread" in shooter_patterns
+    assert shooter_patterns["aimed"]["count"] == 1
+    assert shooter_patterns["aimed"]["spread"] == 0
+    assert shooter_patterns["aimed"]["speed"] == 5.0
+    assert shooter_patterns["aimed"]["cooldown"] == 2.0
+
+    # Verify all patterns have required keys
+    for enemy_type, data in ENEMY_DATA.items():
+        for pattern_name, pattern in data["patterns"].items():
+            assert "count" in pattern, f"{enemy_type}.{pattern_name} missing count"
+            assert "spread" in pattern, f"{enemy_type}.{pattern_name} missing spread"
+            assert "speed" in pattern, f"{enemy_type}.{pattern_name} missing speed"
+            assert "cooldown" in pattern, f"{enemy_type}.{pattern_name} missing cooldown"

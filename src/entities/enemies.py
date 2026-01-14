@@ -11,31 +11,42 @@ ENEMY_DATA = {
         "hp": 3,
         "speed": 3.0,
         "sprite": ("e", "red"),
-        "patterns": {}
+        "patterns": {}  # No shooting - pure melee
     },
     "shooter": {
         "hp": 4,
         "speed": 1.5,
         "sprite": ("S", "magenta"),
-        "patterns": {"shoot": 2.0}  # Cooldown in seconds
+        "patterns": {
+            "aimed": {"count": 1, "spread": 0, "speed": 5.0, "cooldown": 2.0},
+            "spread": {"count": 3, "spread": 30, "speed": 4.5, "cooldown": 2.5}
+        }
     },
     "orbiter": {
         "hp": 5,
         "speed": 4.0,
         "sprite": ("O", "yellow"),
-        "patterns": {"shoot": 1.5, "ring": 3.0}
+        "patterns": {
+            "aimed": {"count": 1, "spread": 0, "speed": 6.0, "cooldown": 1.5},
+            "ring": {"count": 8, "spread": 360, "speed": 4.0, "cooldown": 3.0}
+        }
     },
     "turret": {
         "hp": 6,
         "speed": 0.0,
         "sprite": ("T", "red"),
-        "patterns": {"spray": 2.5}
+        "patterns": {
+            "spray": {"count": 5, "spread": 90, "speed": 5.0, "cooldown": 2.5},
+            "cross": {"count": 4, "spread": 360, "speed": 5.5, "cooldown": 3.0}
+        }
     },
     "tank": {
         "hp": 10,
         "speed": 2.0,
         "sprite": ("E", "bright_red"),
-        "patterns": {"charge": 4.0}
+        "patterns": {
+            "shockwave": {"count": 6, "spread": 360, "speed": 3.5, "cooldown": 4.0}
+        }
     }
 }
 
