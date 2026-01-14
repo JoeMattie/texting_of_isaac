@@ -45,3 +45,15 @@ def test_game_engine_runs_game_loop():
         engine.update(0.016)
     # Should not crash
     assert True
+
+
+def test_engine_has_enemy_shooting_system():
+    """Test game engine registers EnemyShootingSystem."""
+    from src.systems.enemy_shooting import EnemyShootingSystem
+
+    engine = GameEngine()
+
+    # Check system is registered
+    processors = engine.world._processors
+    enemy_shooting_systems = [p for p in processors if isinstance(p, EnemyShootingSystem)]
+    assert len(enemy_shooting_systems) == 1

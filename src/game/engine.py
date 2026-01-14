@@ -5,6 +5,7 @@ from src.systems.input import InputSystem
 from src.systems.movement import MovementSystem
 from src.systems.shooting import ShootingSystem
 from src.systems.ai import AISystem
+from src.systems.enemy_shooting import EnemyShootingSystem
 from src.systems.collision import CollisionSystem
 from src.systems.render import RenderSystem
 
@@ -22,21 +23,27 @@ class GameEngine:
         self.running = True
         self.delta_time = 0.0
 
-        # Create and register all systems
+        # Create and register all systems with priority order
         self.input_system = InputSystem()
-        self.movement_system = MovementSystem()
-        self.shooting_system = ShootingSystem()
-        self.ai_system = AISystem()
-        self.collision_system = CollisionSystem()
-        self.render_system = RenderSystem()
+        self.world.add_processor(self.input_system, priority=0)
 
-        # Add systems as processors
-        esper.add_processor(self.input_system)
-        esper.add_processor(self.movement_system)
-        esper.add_processor(self.shooting_system)
-        esper.add_processor(self.ai_system)
-        esper.add_processor(self.collision_system)
-        esper.add_processor(self.render_system)
+        self.ai_system = AISystem()
+        self.world.add_processor(self.ai_system, priority=1)
+
+        self.enemy_shooting_system = EnemyShootingSystem()
+        self.world.add_processor(self.enemy_shooting_system, priority=2)
+
+        self.shooting_system = ShootingSystem()
+        self.world.add_processor(self.shooting_system, priority=3)
+
+        self.movement_system = MovementSystem()
+        self.world.add_processor(self.movement_system, priority=4)
+
+        self.collision_system = CollisionSystem()
+        self.world.add_processor(self.collision_system, priority=5)
+
+        self.render_system = RenderSystem()
+        self.world.add_processor(self.render_system, priority=6)
 
     def update(self, dt: float):
         """Update all systems.
@@ -50,6 +57,7 @@ class GameEngine:
         self.movement_system.dt = dt
         self.shooting_system.dt = dt
         self.ai_system.dt = dt
+        self.enemy_shooting_system.dt = dt
 
         # Process all systems
         esper.switch_world(self.world_name)
