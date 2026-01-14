@@ -141,3 +141,70 @@ def test_creates_ring_bullets():
     for i in range(1, len(angles)):
         angle_diff = angles[i] - angles[i-1]
         assert angle_diff == pytest.approx(math.pi / 4, abs=0.1)
+
+
+def test_pattern_cycles_through_list():
+    """Test enemy cycles through patterns sequentially."""
+    esper.switch_world("test_world")
+    esper.clear_database()
+
+    player = esper.create_entity()
+    esper.add_component(player, Player())
+    esper.add_component(player, Position(20.0, 10.0))
+
+    # Shooter has 2 patterns: aimed, spread
+    enemy = esper.create_entity()
+    esper.add_component(enemy, Enemy("shooter"))
+    esper.add_component(enemy, Position(10.0, 10.0))
+    esper.add_component(enemy, AIBehavior(
+        pattern_cooldowns={"aimed": 0.0, "spread": 0.0},
+        pattern_index=0
+    ))
+
+    system = EnemyShootingSystem()
+    system.dt = 0.1
+    esper.add_processor(system)
+
+    # First shot: pattern_index = 0 (aimed), should shoot 1 bullet
+    esper.process()
+    ai = esper.component_for_entity(enemy, AIBehavior)
+    assert ai.pattern_index == 1  # Cycled to next
+
+    # Clear projectiles
+    for proj_id, (proj,) in list(esper.get_components(Projectile)):
+        esper.delete_entity(proj_id)
+
+    # Wait for cooldown and shoot again
+    ai.pattern_cooldowns["spread"] = 0.0
+    esper.process()
+
+    # Should cycle back to 0
+    assert ai.pattern_index == 0
+
+
+def test_single_pattern_stays_at_zero():
+    """Test enemy with one pattern keeps pattern_index at 0."""
+    esper.switch_world("test_world")
+    esper.clear_database()
+
+    player = esper.create_entity()
+    esper.add_component(player, Player())
+    esper.add_component(player, Position(20.0, 10.0))
+
+    # Tank has 1 pattern
+    enemy = esper.create_entity()
+    esper.add_component(enemy, Enemy("tank"))
+    esper.add_component(enemy, Position(10.0, 10.0))
+    esper.add_component(enemy, AIBehavior(
+        pattern_cooldowns={"shockwave": 0.0},
+        pattern_index=0
+    ))
+
+    system = EnemyShootingSystem()
+    system.dt = 0.1
+    esper.add_processor(system)
+    esper.process()
+
+    ai = esper.component_for_entity(enemy, AIBehavior)
+    # Should cycle: (0 + 1) % 1 = 0
+    assert ai.pattern_index == 0
