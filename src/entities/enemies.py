@@ -78,6 +78,11 @@ def create_enemy(world_name: str, enemy_type: str, x: float, y: float) -> int:
 
     # Add AI if enemy has patterns
     if data["patterns"]:
-        esper.add_component(entity, AIBehavior(data["patterns"].copy()))
+        # Initialize cooldowns from pattern data
+        cooldowns = {name: pattern["cooldown"] for name, pattern in data["patterns"].items()}
+        esper.add_component(entity, AIBehavior(
+            pattern_cooldowns=cooldowns,
+            pattern_index=0
+        ))
 
     return entity

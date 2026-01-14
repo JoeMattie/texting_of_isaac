@@ -93,3 +93,11 @@ def test_enemy_data_has_pattern_configs():
             assert "spread" in pattern, f"{enemy_type}.{pattern_name} missing spread"
             assert "speed" in pattern, f"{enemy_type}.{pattern_name} missing speed"
             assert "cooldown" in pattern, f"{enemy_type}.{pattern_name} missing cooldown"
+
+
+def test_create_enemy_initializes_pattern_index():
+    """Test enemy with patterns gets pattern_index set to 0."""
+    esper.switch_world("test_world")
+    enemy_id = create_enemy("test_world", "shooter", 10.0, 5.0)
+    ai = esper.component_for_entity(enemy_id, AIBehavior)
+    assert ai.pattern_index == 0
