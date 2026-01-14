@@ -72,6 +72,10 @@ class EnemyShootingSystem(esper.Processor):
         if count == 1:
             # Single bullet - shoot in base direction
             angles = [base_angle]
+        elif spread == 360:
+            # Ring pattern - distribute evenly around full circle
+            angle_step = (2 * math.pi) / count
+            angles = [i * angle_step for i in range(count)]
         else:
             # Multiple bullets - distribute across spread
             spread_rad = spread * (math.pi / 180)

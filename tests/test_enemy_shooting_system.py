@@ -102,3 +102,42 @@ def test_creates_spread_bullets():
     # Should be spread around base direction
     assert min(angles) < 0
     assert max(angles) > 0
+
+
+def test_creates_ring_bullets():
+    """Test enemy creates ring of 8 bullets radiating outward."""
+    esper.switch_world("test_world")
+    esper.clear_database()
+
+    # Create player (position doesn't matter for ring)
+    player = esper.create_entity()
+    esper.add_component(player, Player())
+    esper.add_component(player, Position(20.0, 10.0))
+
+    # Create orbiter with ring pattern ready (index 1)
+    enemy = esper.create_entity()
+    esper.add_component(enemy, Enemy("orbiter"))
+    esper.add_component(enemy, Position(10.0, 10.0))
+    esper.add_component(enemy, AIBehavior(
+        pattern_cooldowns={"aimed": 1.5, "ring": 0.0},
+        pattern_index=1  # Ring pattern
+    ))
+
+    # Process shooting
+    system = EnemyShootingSystem()
+    system.dt = 0.1
+    esper.add_processor(system)
+    esper.process()
+
+    # Should create 8 projectiles
+    projectiles = [e for e, (proj,) in esper.get_components(Projectile)]
+    assert len(projectiles) == 8
+
+    # Verify bullets are evenly distributed (45° apart)
+    velocities = [esper.component_for_entity(p, Velocity) for p in projectiles]
+    angles = sorted([math.atan2(v.dy, v.dx) for v in velocities])
+
+    # Check approximate 45° spacing (π/4 radians)
+    for i in range(1, len(angles)):
+        angle_diff = angles[i] - angles[i-1]
+        assert angle_diff == pytest.approx(math.pi / 4, abs=0.1)
