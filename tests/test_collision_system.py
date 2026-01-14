@@ -70,3 +70,77 @@ def test_projectile_damages_enemy():
     # Enemy should take damage
     health = esper.component_for_entity(enemy, Health)
     assert health.current == 3  # 5 - 2 damage
+
+
+def test_enemy_projectile_hits_player():
+    """Test enemy projectiles collide with player."""
+    esper.switch_world("test_world")
+    esper.clear_database()
+
+    # Create player
+    player = esper.create_entity()
+    esper.add_component(player, Player())
+    esper.add_component(player, Position(10.0, 10.0))
+    esper.add_component(player, Collider(0.5))
+
+    # Create enemy
+    enemy = esper.create_entity()
+    esper.add_component(enemy, Enemy("shooter"))
+    esper.add_component(enemy, Position(5.0, 10.0))
+
+    # Create enemy projectile at player position
+    projectile = esper.create_entity()
+    esper.add_component(projectile, Position(10.0, 10.0))
+    esper.add_component(projectile, Projectile(damage=1.0, owner=enemy))
+    esper.add_component(projectile, Collider(0.2))
+
+    # Process collision
+    system = CollisionSystem()
+    esper.add_processor(system)
+    esper.process()
+
+    # Projectile should be removed
+    assert not esper.entity_exists(projectile)
+
+
+def test_enemy_projectile_ignores_enemies():
+    """Test enemy projectiles don't collide with other enemies."""
+    esper.switch_world("test_world")
+    esper.clear_database()
+
+    # Create player (needed for collision system)
+    player = esper.create_entity()
+    esper.add_component(player, Player())
+    esper.add_component(player, Position(20.0, 20.0))
+    esper.add_component(player, Collider(0.5))
+
+    # Create two enemies
+    enemy1 = esper.create_entity()
+    esper.add_component(enemy1, Enemy("shooter"))
+    esper.add_component(enemy1, Position(10.0, 10.0))
+    esper.add_component(enemy1, Collider(0.4))
+    esper.add_component(enemy1, Health(5, 5))
+
+    enemy2 = esper.create_entity()
+    esper.add_component(enemy2, Enemy("chaser"))
+    esper.add_component(enemy2, Position(10.0, 10.0))
+    esper.add_component(enemy2, Collider(0.4))
+    esper.add_component(enemy2, Health(3, 3))
+
+    # Create enemy projectile at enemy2 position
+    projectile = esper.create_entity()
+    esper.add_component(projectile, Position(10.0, 10.0))
+    esper.add_component(projectile, Projectile(damage=1.0, owner=enemy1))
+    esper.add_component(projectile, Collider(0.2))
+
+    # Process collision
+    system = CollisionSystem()
+    esper.add_processor(system)
+    esper.process()
+
+    # Projectile should still exist (no collision with enemy)
+    assert esper.entity_exists(projectile)
+
+    # Enemy health unchanged
+    health = esper.component_for_entity(enemy2, Health)
+    assert health.current == 3

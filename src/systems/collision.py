@@ -55,15 +55,27 @@ class CollisionSystem(esper.Processor):
         """
         # Projectile hitting enemy
         if esper.has_component(e1, Projectile) and esper.has_component(e2, Enemy):
-            self._projectile_hit_enemy(e1, e2)
+            proj = esper.component_for_entity(e1, Projectile)
+            # Only if projectile is from player (or owner doesn't exist - legacy behavior)
+            if not esper.entity_exists(proj.owner) or esper.has_component(proj.owner, Player):
+                self._projectile_hit_enemy(e1, e2)
         elif esper.has_component(e2, Projectile) and esper.has_component(e1, Enemy):
-            self._projectile_hit_enemy(e2, e1)
+            proj = esper.component_for_entity(e2, Projectile)
+            # Only if projectile is from player (or owner doesn't exist - legacy behavior)
+            if not esper.entity_exists(proj.owner) or esper.has_component(proj.owner, Player):
+                self._projectile_hit_enemy(e2, e1)
 
         # Projectile hitting player
         if esper.has_component(e1, Projectile) and esper.has_component(e2, Player):
-            self._projectile_hit_player(e1, e2)
+            proj = esper.component_for_entity(e1, Projectile)
+            # Only if projectile is from enemy
+            if esper.entity_exists(proj.owner) and esper.has_component(proj.owner, Enemy):
+                self._projectile_hit_player(e1, e2)
         elif esper.has_component(e2, Projectile) and esper.has_component(e1, Player):
-            self._projectile_hit_player(e2, e1)
+            proj = esper.component_for_entity(e2, Projectile)
+            # Only if projectile is from enemy
+            if esper.entity_exists(proj.owner) and esper.has_component(proj.owner, Enemy):
+                self._projectile_hit_player(e2, e1)
 
     def _projectile_hit_enemy(self, projectile: int, enemy: int):
         """Handle projectile hitting enemy."""
