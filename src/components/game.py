@@ -91,6 +91,10 @@ class CollectedItems:
         Returns:
             True if any collected item has this effect
         """
+        if not isinstance(effect_name, str):
+            raise TypeError("effect_name must be a string")
+        if not effect_name:
+            raise ValueError("effect_name cannot be empty")
         return any(effect_name in item.special_effects for item in self.items)
 
     def __repr__(self) -> str:

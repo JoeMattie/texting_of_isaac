@@ -236,3 +236,17 @@ def test_collected_items_has_effect_with_no_items():
 
     collected = CollectedItems()
     assert collected.has_effect("piercing") is False
+
+
+def test_collected_items_has_effect_validates_input():
+    """Test has_effect() validates effect_name parameter."""
+    import pytest
+    from src.components.game import CollectedItems
+
+    collected = CollectedItems()
+
+    with pytest.raises(TypeError, match="effect_name must be a string"):
+        collected.has_effect(None)
+
+    with pytest.raises(ValueError, match="effect_name cannot be empty"):
+        collected.has_effect("")
