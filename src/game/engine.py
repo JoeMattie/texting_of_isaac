@@ -6,8 +6,10 @@ from src.systems.movement import MovementSystem
 from src.systems.shooting import ShootingSystem
 from src.systems.ai import AISystem
 from src.systems.enemy_shooting import EnemyShootingSystem
+from src.systems.homing import HomingSystem
 from src.systems.collision import CollisionSystem
 from src.systems.invincibility import InvincibilitySystem
+from src.systems.item_pickup import ItemPickupSystem
 from src.systems.render import RenderSystem
 
 
@@ -40,11 +42,17 @@ class GameEngine:
         self.movement_system = MovementSystem()
         self.world.add_processor(self.movement_system, priority=4)
 
+        self.homing_system = HomingSystem()
+        self.world.add_processor(self.homing_system, priority=4.5)
+
         self.collision_system = CollisionSystem()
         self.world.add_processor(self.collision_system, priority=5)
 
         self.invincibility_system = InvincibilitySystem()
         self.world.add_processor(self.invincibility_system, priority=6)
+
+        self.item_pickup_system = ItemPickupSystem()
+        self.world.add_processor(self.item_pickup_system, priority=6.5)
 
         self.render_system = RenderSystem()
         self.world.add_processor(self.render_system, priority=7)
@@ -62,7 +70,9 @@ class GameEngine:
         self.shooting_system.dt = dt
         self.ai_system.dt = dt
         self.enemy_shooting_system.dt = dt
+        self.homing_system.dt = dt
         self.invincibility_system.dt = dt
+        self.item_pickup_system.dt = dt
 
         # Process all systems
         esper.switch_world(self.world_name)

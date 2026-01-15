@@ -69,3 +69,27 @@ def test_engine_has_invincibility_system():
     processors = engine.world._processors
     invincibility_systems = [p for p in processors if isinstance(p, InvincibilitySystem)]
     assert len(invincibility_systems) == 1
+
+
+def test_engine_has_homing_system():
+    """Test game engine registers HomingSystem."""
+    from src.systems.homing import HomingSystem
+
+    engine = GameEngine()
+
+    # Check system is registered
+    processors = engine.world._processors
+    homing_systems = [p for p in processors if isinstance(p, HomingSystem)]
+    assert len(homing_systems) == 1
+
+
+def test_engine_has_item_pickup_system():
+    """Test game engine registers ItemPickupSystem."""
+    from src.systems.item_pickup import ItemPickupSystem
+
+    engine = GameEngine()
+
+    # Check system is registered
+    processors = engine.world._processors
+    item_pickup_systems = [p for p in processors if isinstance(p, ItemPickupSystem)]
+    assert len(item_pickup_systems) == 1
