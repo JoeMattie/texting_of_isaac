@@ -4,7 +4,7 @@ A TUI (Terminal User Interface) roguelike game inspired by The Binding of Isaac,
 
 ![Version](https://img.shields.io/badge/version-0.1.0--alpha-orange)
 ![Python](https://img.shields.io/badge/python-3.12%2B-blue)
-![Tests](https://img.shields.io/badge/tests-81%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-99%20passing-brightgreen)
 
 ## 🎮 What is This?
 
@@ -25,13 +25,14 @@ Texting of Isaac is a bullet-hell roguelike rendered entirely in ASCII/Unicode c
   - Tanks that fire shockwave patterns
 - **Enemy Shooting** - Enemies fire back with varied attack patterns
 - **Collision Detection** - Circle-based physics with bidirectional damage
+- **Player Damage System** - Take damage from projectiles and contact
+- **Invincibility Frames** - Brief immunity after taking damage with visual flash
 - **Rich TUI Rendering** - Beautiful terminal interface with colors
 - **Room Generation** - Procedural obstacle placement
 - **5 Enemy Types** - Diverse enemy roster with unique stats and patterns
-- **Comprehensive Tests** - 81 unit tests ensuring code quality
+- **Comprehensive Tests** - 99 unit tests ensuring code quality
 
 ### 🚧 In Progress / Planned
-- Player damage and health system integration
 - Item pickup and stat modification system
 - Multi-room dungeon progression
 - Room transitions and door mechanics
@@ -106,7 +107,7 @@ texting_of_isaac/
 │   │   ├── engine.py      # Main game engine & ECS world
 │   │   └── room.py        # Room generation & management
 │   └── config.py          # Game constants and configuration
-├── tests/                 # Unit tests (81 tests)
+├── tests/                 # Unit tests (99 tests)
 └── docs/
     └── plans/             # Design documents
 ```
@@ -168,7 +169,6 @@ Benefits:
 
 ## 🐛 Known Issues
 
-- Player is currently invincible (damage system not fully integrated)
 - Single room only (no dungeon progression)
 - No item pickups implemented
 - Projectiles can go off-screen indefinitely
@@ -198,12 +198,12 @@ This project is open source and available under the MIT License.
 - [x] Enemy AI
 - [x] Collision detection
 - [x] Enemy shooting patterns
-- [ ] Player damage system
+- [x] Player damage system
+- [ ] Item pickup and stat modification system
 
 **Phase 2: Progression**
 - [ ] Multi-room dungeons
 - [ ] Room transitions
-- [ ] Item pickups and stat modifications
 - [ ] Special item effects
 
 **Phase 3: Content**

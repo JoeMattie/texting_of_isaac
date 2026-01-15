@@ -7,6 +7,7 @@ from src.systems.shooting import ShootingSystem
 from src.systems.ai import AISystem
 from src.systems.enemy_shooting import EnemyShootingSystem
 from src.systems.collision import CollisionSystem
+from src.systems.invincibility import InvincibilitySystem
 from src.systems.render import RenderSystem
 
 
@@ -42,8 +43,11 @@ class GameEngine:
         self.collision_system = CollisionSystem()
         self.world.add_processor(self.collision_system, priority=5)
 
+        self.invincibility_system = InvincibilitySystem()
+        self.world.add_processor(self.invincibility_system, priority=6)
+
         self.render_system = RenderSystem()
-        self.world.add_processor(self.render_system, priority=6)
+        self.world.add_processor(self.render_system, priority=7)
 
     def update(self, dt: float):
         """Update all systems.
@@ -58,6 +62,7 @@ class GameEngine:
         self.shooting_system.dt = dt
         self.ai_system.dt = dt
         self.enemy_shooting_system.dt = dt
+        self.invincibility_system.dt = dt
 
         # Process all systems
         esper.switch_world(self.world_name)
