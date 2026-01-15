@@ -2,6 +2,7 @@
 import esper
 from typing import List, Dict
 from src.components.core import Position, Sprite
+from src.components.game import Player, Invincible
 from src.config import Config
 
 
@@ -38,7 +39,18 @@ class RenderSystem(esper.Processor):
 
             # Bounds check
             if 0 <= x < Config.ROOM_WIDTH and 0 <= y < Config.ROOM_HEIGHT:
-                grid[y][x] = {'char': sprite.char, 'color': sprite.color}
+                # Handle invincibility flashing for player
+                color = sprite.color
+                if esper.has_component(ent, Player) and esper.has_component(ent, Invincible):
+                    # Flash every 0.1 seconds (10 FPS flash rate)
+                    invincible = esper.component_for_entity(ent, Invincible)
+                    # Use elapsed time: (duration - remaining)
+                    elapsed = Config.INVINCIBILITY_DURATION - invincible.remaining
+                    if (elapsed % 0.2) < 0.1:
+                        color = 'white'  # Flash to white
+                    # else: keep original color
+
+                grid[y][x] = {'char': sprite.char, 'color': color}
 
         return grid
 
