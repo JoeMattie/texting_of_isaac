@@ -2,7 +2,7 @@
 import esper
 from src.components.core import Position, Velocity, Health, Sprite
 from src.components.combat import Stats, Collider
-from src.components.game import Player
+from src.components.game import Player, CollectedItems
 from src.config import Config
 
 
@@ -32,5 +32,6 @@ def create_player(world: str, x: float, y: float) -> int:
     ))
     esper.add_component(entity, Collider(Config.PLAYER_HITBOX))
     esper.add_component(entity, Player())
+    esper.add_component(entity, CollectedItems())  # Start with empty collection
 
     return entity

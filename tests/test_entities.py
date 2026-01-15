@@ -101,3 +101,21 @@ def test_create_enemy_initializes_pattern_index():
     enemy_id = create_enemy("test_world", "shooter", 10.0, 5.0)
     ai = esper.component_for_entity(enemy_id, AIBehavior)
     assert ai.pattern_index == 0
+
+
+def test_create_player_has_collected_items():
+    """Test player is initialized with empty CollectedItems component."""
+    from src.components.game import CollectedItems
+
+    world = "test_player_collected_items"
+    esper.switch_world(world)
+    esper.clear_database()
+
+    entity_id = create_player(world, 30.0, 10.0)
+
+    # Check CollectedItems component exists
+    assert esper.has_component(entity_id, CollectedItems)
+
+    # Check it starts empty
+    collected_items = esper.component_for_entity(entity_id, CollectedItems)
+    assert collected_items.items == []
