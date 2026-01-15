@@ -128,3 +128,35 @@ def test_float_constants_are_numeric():
     assert isinstance(Config.PROJECTILE_HITBOX, (int, float))
     assert isinstance(Config.INVINCIBILITY_DURATION, (int, float))
     assert isinstance(Config.HEART_DROP_CHANCE, (int, float))
+
+
+def test_item_drop_chance_is_probability():
+    """Test ITEM_DROP_CHANCE is between 0 and 1."""
+    from src.config import Config
+
+    assert hasattr(Config, 'ITEM_DROP_CHANCE')
+    assert 0.0 <= Config.ITEM_DROP_CHANCE <= 1.0
+
+
+def test_item_pickup_radius_is_positive():
+    """Test ITEM_PICKUP_RADIUS is positive."""
+    from src.config import Config
+
+    assert hasattr(Config, 'ITEM_PICKUP_RADIUS')
+    assert Config.ITEM_PICKUP_RADIUS > 0
+
+
+def test_homing_turn_rate_is_positive():
+    """Test HOMING_TURN_RATE is positive."""
+    from src.config import Config
+
+    assert hasattr(Config, 'HOMING_TURN_RATE')
+    assert Config.HOMING_TURN_RATE > 0
+
+
+def test_notification_duration_is_positive():
+    """Test NOTIFICATION_DURATION is positive."""
+    from src.config import Config
+
+    assert hasattr(Config, 'NOTIFICATION_DURATION')
+    assert Config.NOTIFICATION_DURATION > 0
