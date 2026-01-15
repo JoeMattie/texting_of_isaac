@@ -140,3 +140,73 @@ def test_non_player_doesnt_flash():
     # Enemy should keep original color (no flashing)
     assert grid[5][5]['char'] == 'E'
     assert grid[5][5]['color'] == 'red'
+
+
+def test_render_displays_pickup_notification():
+    """Test that pickup notifications are displayed at the top of the screen."""
+    from src.systems.item_pickup import ItemPickupSystem
+
+    world = "test_pickup_notification"
+    esper.switch_world(world)
+    esper.clear_database()
+
+    system = RenderSystem()
+    pickup_system = ItemPickupSystem()
+
+    # Set a notification
+    pickup_system.notification = "Picked up: Speed Up!"
+
+    # Connect systems
+    system.item_pickup_system = pickup_system
+
+    grid = system.render(world)
+
+    # Check notification appears centered at top (row 0)
+    # "Picked up: Speed Up!" is 22 chars, centered in 80 width = x starts at (80-22)//2 = 29
+    notification = "Picked up: Speed Up!"
+    x_start = (Config.ROOM_WIDTH - len(notification)) // 2
+
+    for i, char in enumerate(notification):
+        cell = grid[0][x_start + i]
+        assert cell['char'] == char
+        assert cell['color'] == 'yellow'
+
+
+def test_render_no_notification_when_none():
+    """Test that render doesn't crash when notification is None."""
+    from src.systems.item_pickup import ItemPickupSystem
+
+    world = "test_no_notification"
+    esper.switch_world(world)
+    esper.clear_database()
+
+    system = RenderSystem()
+    pickup_system = ItemPickupSystem()
+
+    # No notification set (None)
+    pickup_system.notification = None
+
+    # Connect systems
+    system.item_pickup_system = pickup_system
+
+    # Should not crash
+    grid = system.render(world)
+
+    # Top row should be all dots (default)
+    assert all(cell['char'] == '.' for cell in grid[0])
+
+
+def test_render_without_item_pickup_system():
+    """Test that render doesn't crash without item_pickup_system reference."""
+    world = "test_no_pickup_system"
+    esper.switch_world(world)
+    esper.clear_database()
+
+    system = RenderSystem()
+    # Don't set item_pickup_system attribute
+
+    # Should not crash
+    grid = system.render(world)
+
+    # Top row should be all dots (default)
+    assert all(cell['char'] == '.' for cell in grid[0])

@@ -52,6 +52,16 @@ class RenderSystem(esper.Processor):
 
                 grid[y][x] = {'char': sprite.char, 'color': color}
 
+        # Render item pickup notification
+        if hasattr(self, 'item_pickup_system') and self.item_pickup_system.notification:
+            notification = self.item_pickup_system.notification
+            # Center the notification at top of screen
+            x = (Config.ROOM_WIDTH - len(notification)) // 2
+            if 0 <= x < Config.ROOM_WIDTH:
+                for i, char in enumerate(notification):
+                    if x + i < Config.ROOM_WIDTH:
+                        grid[0][x + i] = {'char': char, 'color': 'yellow'}
+
         return grid
 
     def process(self):
