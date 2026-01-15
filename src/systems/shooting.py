@@ -55,16 +55,54 @@ class ShootingSystem(esper.Processor):
             damage: Damage dealt on hit
             speed: Projectile speed
         """
+        from src.components.game import CollectedItems
+
         # Normalize direction
         length = math.sqrt(dx * dx + dy * dy)
         if length > 0:
             dx /= length
             dy /= length
 
+        # Get player position
+        pos = esper.component_for_entity(owner, Position)
+
+        # Check for multi-shot effect
+        has_multi_shot = False
+        if esper.has_component(owner, CollectedItems):
+            collected = esper.component_for_entity(owner, CollectedItems)
+            has_multi_shot = collected.has_effect("multi_shot")
+
+        # Calculate base angle
+        angle = math.atan2(dy, dx)
+
+        if has_multi_shot:
+            # Fire 3 projectiles: left (-15°), center, right (+15°)
+            stats = esper.component_for_entity(owner, Stats)
+            self._spawn_projectile(owner, pos, angle - math.radians(15), stats)
+            self._spawn_projectile(owner, pos, angle, stats)
+            self._spawn_projectile(owner, pos, angle + math.radians(15), stats)
+        else:
+            # Fire single projectile
+            stats = esper.component_for_entity(owner, Stats)
+            self._spawn_projectile(owner, pos, angle, stats)
+
+    def _spawn_projectile(self, player_ent: int, pos: Position, angle: float, stats: Stats):
+        """Spawn a single projectile at the given angle.
+
+        Args:
+            player_ent: Player entity ID (projectile owner)
+            pos: Starting position
+            angle: Angle in radians
+            stats: Player stats for damage/speed
+        """
+        # Calculate velocity from angle
+        vel_x = math.cos(angle) * stats.shot_speed
+        vel_y = math.sin(angle) * stats.shot_speed
+
         # Create projectile entity
         projectile = esper.create_entity()
-        esper.add_component(projectile, Position(x, y))
-        esper.add_component(projectile, Velocity(dx * speed, dy * speed))
-        esper.add_component(projectile, Projectile(damage, owner))
+        esper.add_component(projectile, Position(pos.x, pos.y))
+        esper.add_component(projectile, Velocity(vel_x, vel_y))
+        esper.add_component(projectile, Projectile(stats.damage, player_ent))
         esper.add_component(projectile, Collider(Config.PROJECTILE_HITBOX))
         esper.add_component(projectile, Sprite('.', 'white'))
