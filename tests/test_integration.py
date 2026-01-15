@@ -2,9 +2,9 @@
 import esper
 import pytest
 from src.game.engine import GameEngine
-from src.components.core import Position
-from src.components.game import Player, Enemy, AIBehavior
-from src.components.combat import Projectile
+from src.components.core import Position, Health
+from src.components.game import Player, Enemy, AIBehavior, Invincible
+from src.components.combat import Projectile, Collider
 from src.entities.player import create_player
 from src.entities.enemies import create_enemy
 
@@ -67,3 +67,62 @@ def test_enemy_projectiles_damage_player():
 
     # Projectile should be removed after collision
     assert projectiles_after < projectiles_before or projectiles_after == 0
+
+
+def test_player_damage_and_invincibility_cycle():
+    """Test complete damage flow from hit to recovery."""
+    esper.switch_world("test_damage_cycle")
+    esper.clear_database()
+
+    # Create game engine
+    engine = GameEngine()
+    world = engine.world_name
+
+    # Create player with 3 HP
+    player = create_player(world, 20.0, 10.0)
+    esper.switch_world(world)
+    health = esper.component_for_entity(player, Health)
+    health.current = 3.0
+
+    # Create enemy
+    enemy = create_enemy(world, "shooter", 10.0, 10.0)
+
+    # Create first projectile at player position
+    projectile1 = esper.create_entity()
+    esper.add_component(projectile1, Position(20.0, 10.0))
+    esper.add_component(projectile1, Projectile(damage=1.0, owner=enemy))
+    esper.add_component(projectile1, Collider(0.2))
+
+    # Update once - collision should deal damage
+    engine.update(0.1)
+
+    # Verify damage dealt and invincibility granted
+    assert health.current == 2.0
+    assert esper.has_component(player, Invincible)
+
+    # Create second projectile during invincibility
+    projectile2 = esper.create_entity()
+    esper.add_component(projectile2, Position(20.0, 10.0))
+    esper.add_component(projectile2, Projectile(damage=1.0, owner=enemy))
+    esper.add_component(projectile2, Collider(0.2))
+
+    # Update - should not deal damage (invincible)
+    engine.update(0.1)
+    assert health.current == 2.0
+
+    # Wait for invincibility to expire (0.5s total)
+    for _ in range(5):
+        engine.update(0.1)
+
+    # Invincibility should be gone
+    assert not esper.has_component(player, Invincible)
+
+    # Create third projectile after invincibility expires
+    projectile3 = esper.create_entity()
+    esper.add_component(projectile3, Position(20.0, 10.0))
+    esper.add_component(projectile3, Projectile(damage=1.0, owner=enemy))
+    esper.add_component(projectile3, Collider(0.2))
+
+    # Update - should deal damage again
+    engine.update(0.1)
+    assert health.current == 1.0
