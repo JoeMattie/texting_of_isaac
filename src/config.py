@@ -29,11 +29,11 @@ class Config:
     MAX_PROJECTILES: int = 200
 
     # Item system
-    ITEM_DROP_CHANCE = 0.15  # 15% chance for enemy to drop item
-    ITEM_PICKUP_RADIUS = 0.4  # Collision radius for item pickups
+    ITEM_DROP_CHANCE: float = 0.15  # 15% chance for enemy to drop item
+    ITEM_PICKUP_RADIUS: float = 0.4  # Collision radius for item pickups
 
     # Homing effect
-    HOMING_TURN_RATE = 120.0  # Degrees per second (2 degrees per frame at 60fps)
+    HOMING_TURN_RATE: float = 120.0  # Degrees per second (2 degrees per frame at 60fps)
 
     # Notification display
-    NOTIFICATION_DURATION = 2.0  # Seconds to display pickup notification
+    NOTIFICATION_DURATION: float = 2.0  # Seconds to display pickup notification
