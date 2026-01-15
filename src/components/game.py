@@ -74,3 +74,24 @@ class Dead:
 
     def __repr__(self) -> str:
         return "Dead()"
+
+
+class CollectedItems:
+    """Tracks items collected by the player."""
+
+    def __init__(self) -> None:
+        self.items: List[Item] = []
+
+    def has_effect(self, effect_name: str) -> bool:
+        """Check if player has a specific special effect.
+
+        Args:
+            effect_name: Name of the effect to check for
+
+        Returns:
+            True if any collected item has this effect
+        """
+        return any(effect_name in item.special_effects for item in self.items)
+
+    def __repr__(self) -> str:
+        return f"CollectedItems(items={[item.name for item in self.items]})"

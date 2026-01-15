@@ -196,3 +196,43 @@ def test_dead_is_marker_component():
     """Test Dead component is a simple marker."""
     dead = Dead()
     assert repr(dead) == "Dead()"
+
+
+def test_collected_items_tracks_items():
+    """Test CollectedItems stores Item objects."""
+    from src.components.game import CollectedItems, Item
+
+    item1 = Item("mushroom", {"damage": 1.0}, [])
+    item2 = Item("triple_shot", {}, ["multi_shot"])
+
+    collected = CollectedItems()
+    collected.items.append(item1)
+    collected.items.append(item2)
+
+    assert len(collected.items) == 2
+    assert collected.items[0].name == "mushroom"
+    assert collected.items[1].name == "triple_shot"
+
+
+def test_collected_items_has_effect():
+    """Test has_effect() correctly identifies special effects."""
+    from src.components.game import CollectedItems, Item
+
+    item1 = Item("piercing_tears", {}, ["piercing"])
+    item2 = Item("homing_shots", {}, ["homing"])
+
+    collected = CollectedItems()
+    collected.items.append(item1)
+    collected.items.append(item2)
+
+    assert collected.has_effect("piercing") is True
+    assert collected.has_effect("homing") is True
+    assert collected.has_effect("multi_shot") is False
+
+
+def test_collected_items_has_effect_with_no_items():
+    """Test has_effect() returns False when no items collected."""
+    from src.components.game import CollectedItems
+
+    collected = CollectedItems()
+    assert collected.has_effect("piercing") is False
