@@ -57,3 +57,15 @@ def test_engine_has_enemy_shooting_system():
     processors = engine.world._processors
     enemy_shooting_systems = [p for p in processors if isinstance(p, EnemyShootingSystem)]
     assert len(enemy_shooting_systems) == 1
+
+
+def test_engine_has_invincibility_system():
+    """Test game engine registers InvincibilitySystem."""
+    from src.systems.invincibility import InvincibilitySystem
+
+    engine = GameEngine()
+
+    # Check system is registered
+    processors = engine.world._processors
+    invincibility_systems = [p for p in processors if isinstance(p, InvincibilitySystem)]
+    assert len(invincibility_systems) == 1
