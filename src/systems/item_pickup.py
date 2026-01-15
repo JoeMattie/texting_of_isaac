@@ -27,6 +27,9 @@ class ItemPickupSystem(esper.Processor):
         # Check for Player + Item collisions
         for player_ent, (player, player_pos, player_col) in esper.get_components(Player, Position, Collider):
             for item_ent, (item, item_pos, item_col) in esper.get_components(Item, Position, Collider):
+                # Skip if entity was already deleted in this frame
+                if not esper.entity_exists(item_ent):
+                    continue
                 if self._check_overlap(player_pos, player_col, item_pos, item_col):
                     self._pickup_item(player_ent, item_ent, item)
 
@@ -64,6 +67,12 @@ class ItemPickupSystem(esper.Processor):
             elif stat_name in ["speed", "shot_speed"]:
                 # Multiplicative stats
                 setattr(stats, stat_name, getattr(stats, stat_name) * value)
+
+        # Add to collected items
+        if not esper.has_component(player_ent, CollectedItems):
+            esper.add_component(player_ent, CollectedItems())
+        collected = esper.component_for_entity(player_ent, CollectedItems)
+        collected.items.append(item)
 
         # Remove item entity
         esper.delete_entity(item_ent)

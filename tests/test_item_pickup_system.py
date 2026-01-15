@@ -148,3 +148,80 @@ def test_pickup_applies_multiple_stat_modifiers():
     # Verify both stats modified
     assert stats.damage == 2.0  # 1.0 + 1.0 (additive)
     assert stats.speed == 6.0   # 5.0 * 1.2 (multiplicative)
+
+
+def test_pickup_adds_to_collected_items():
+    """Test picked up items are tracked in CollectedItems."""
+    world_name = "test_world"
+    esper.switch_world(world_name)
+
+    # Create player
+    player = esper.create_entity()
+    esper.add_component(player, Player())
+    esper.add_component(player, Position(10.0, 10.0))
+    esper.add_component(player, Collider(0.3))
+    esper.add_component(player, Stats(5.0, 1.0, 0.3, 10.0))
+
+    # Create first item
+    item1 = esper.create_entity()
+    item1_component = Item("mushroom", {"damage": 1.0}, [])
+    esper.add_component(item1, item1_component)
+    esper.add_component(item1, Position(10.0, 10.0))
+    esper.add_component(item1, Collider(0.4))
+
+    # Process pickup
+    system = ItemPickupSystem()
+    system.dt = 0.016
+    system.process()
+
+    # Verify CollectedItems component added and contains item
+    assert esper.has_component(player, CollectedItems)
+    collected = esper.component_for_entity(player, CollectedItems)
+    assert len(collected.items) == 1
+    assert collected.items[0].name == "mushroom"
+
+    # Create second item
+    item2 = esper.create_entity()
+    item2_component = Item("triple_shot", {}, ["multi_shot"])
+    esper.add_component(item2, item2_component)
+    esper.add_component(item2, Position(10.0, 10.0))
+    esper.add_component(item2, Collider(0.4))
+
+    # Process pickup again
+    system.process()
+
+    # Verify second item added
+    assert len(collected.items) == 2
+    assert collected.items[1].name == "triple_shot"
+
+
+def test_pickup_creates_collected_items_if_missing():
+    """Test CollectedItems component is created if player doesn't have it."""
+    world_name = "test_world"
+    esper.switch_world(world_name)
+
+    # Create player without CollectedItems
+    player = esper.create_entity()
+    esper.add_component(player, Player())
+    esper.add_component(player, Position(10.0, 10.0))
+    esper.add_component(player, Collider(0.3))
+    esper.add_component(player, Stats(5.0, 1.0, 0.3, 10.0))
+
+    # Verify no CollectedItems initially
+    assert not esper.has_component(player, CollectedItems)
+
+    # Create and pick up item
+    item_entity = esper.create_entity()
+    item_component = Item("test_item", {}, [])
+    esper.add_component(item_entity, item_component)
+    esper.add_component(item_entity, Position(10.0, 10.0))
+    esper.add_component(item_entity, Collider(0.4))
+
+    system = ItemPickupSystem()
+    system.dt = 0.016
+    system.process()
+
+    # Verify CollectedItems was created
+    assert esper.has_component(player, CollectedItems)
+    collected = esper.component_for_entity(player, CollectedItems)
+    assert len(collected.items) == 1
