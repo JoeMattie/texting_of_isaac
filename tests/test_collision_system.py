@@ -498,3 +498,135 @@ def test_piercing_hits_multiple_enemies():
     # Both enemies should take damage
     assert enemy1_health.current < initial_hp1
     assert enemy2_health.current < initial_hp2
+
+
+def test_enemy_drops_item_on_death():
+    """Test enemies can drop items when killed."""
+    import random
+    from src.entities.player import create_player
+
+    world_name = "test_world"
+    esper.switch_world(world_name)
+    esper.clear_database()
+
+    # Seed random for predictable test
+    random.seed(42)
+
+    # Create player
+    player = create_player(world_name, 10.0, 10.0)
+
+    # Create many enemies to ensure at least one drop
+    # With 15% drop rate, 20 enemies should give ~3 drops
+    from src.entities.enemies import create_enemy
+    enemies = []
+    for i in range(20):
+        enemy = create_enemy(world_name, "chaser", 15.0 + i * 0.1, 10.0)
+        enemies.append(enemy)
+
+    # Kill all enemies with projectiles
+    for enemy in enemies:
+        proj = esper.create_entity()
+        esper.add_component(proj, Position(15.0, 10.0))
+        from src.components.core import Velocity
+        esper.add_component(proj, Velocity(10.0, 0.0))
+        esper.add_component(proj, Collider(0.1))
+        esper.add_component(proj, Projectile(100.0, player))  # High damage to kill
+
+        collision_system = CollisionSystem()
+        esper.add_processor(collision_system)
+        esper.process()
+
+    # Count dropped items
+    from src.components.game import Item
+    item_count = len(list(esper.get_components(Item)))
+
+    # Should have at least 1 drop from 20 enemies
+    assert item_count > 0
+
+
+def test_item_drops_at_enemy_position():
+    """Test dropped items spawn at enemy position."""
+    import random
+    from src.entities.player import create_player
+
+    world_name = "test_world"
+    esper.switch_world(world_name)
+    esper.clear_database()
+
+    # Force a drop by manipulating random
+    original_random = random.random
+    random.random = lambda: 0.0  # Always drop
+
+    try:
+        # Create player
+        player = create_player(world_name, 10.0, 10.0)
+
+        # Create enemy at specific position
+        from src.entities.enemies import create_enemy
+        enemy = create_enemy(world_name, "chaser", 25.0, 30.0)
+
+        # Kill enemy
+        proj = esper.create_entity()
+        esper.add_component(proj, Position(25.0, 30.0))
+        from src.components.core import Velocity
+        esper.add_component(proj, Velocity(10.0, 0.0))
+        esper.add_component(proj, Collider(0.1))
+        esper.add_component(proj, Projectile(100.0, player))
+
+        collision_system = CollisionSystem()
+        esper.add_processor(collision_system)
+        esper.process()
+
+        # Find dropped item
+        from src.components.game import Item
+        for _, (item, pos) in esper.get_components(Item, Position):
+            # Item should be at enemy's death position
+            assert abs(pos.x - 25.0) < 0.1
+            assert abs(pos.y - 30.0) < 0.1
+            break
+        else:
+            assert False, "No item was dropped"
+
+    finally:
+        random.random = original_random
+
+
+def test_no_drop_without_luck():
+    """Test enemies don't always drop items."""
+    import random
+    from src.entities.player import create_player
+
+    world_name = "test_world"
+    esper.switch_world(world_name)
+    esper.clear_database()
+
+    # Force no drops
+    original_random = random.random
+    random.random = lambda: 1.0  # Never drop
+
+    try:
+        # Create player
+        player = create_player(world_name, 10.0, 10.0)
+
+        # Create and kill enemy
+        from src.entities.enemies import create_enemy
+        enemy = create_enemy(world_name, "chaser", 15.0, 10.0)
+
+        proj = esper.create_entity()
+        esper.add_component(proj, Position(15.0, 10.0))
+        from src.components.core import Velocity
+        esper.add_component(proj, Velocity(10.0, 0.0))
+        esper.add_component(proj, Collider(0.1))
+        esper.add_component(proj, Projectile(100.0, player))
+
+        collision_system = CollisionSystem()
+        esper.add_processor(collision_system)
+        esper.process()
+
+        # Should be no items
+        from src.components.game import Item
+        item_count = len(list(esper.get_components(Item)))
+        assert item_count == 0
+
+    finally:
+        random.random = original_random

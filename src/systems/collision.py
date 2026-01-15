@@ -90,7 +90,9 @@ class CollisionSystem(esper.Processor):
             projectile: Projectile entity ID
             enemy: Enemy entity ID
         """
+        import random
         from src.components.game import Player, CollectedItems
+        from src.config import Config
 
         proj = esper.component_for_entity(projectile, Projectile)
         health = esper.component_for_entity(enemy, Health)
@@ -111,6 +113,12 @@ class CollisionSystem(esper.Processor):
 
         # Check for enemy death
         if health.current <= 0:
+            # Roll for item drop
+            if random.random() < Config.ITEM_DROP_CHANCE:
+                pos = esper.component_for_entity(enemy, Position)
+                from src.entities.items import spawn_random_item
+                spawn_random_item(esper._current_world, pos.x, pos.y)
+
             esper.delete_entity(enemy)
 
     def _projectile_hit_player(self, projectile: int, player: int):
