@@ -58,6 +58,8 @@ class ItemPickupSystem(esper.Processor):
             item_ent: Item entity ID
             item: Item component
         """
+        from src.config import Config
+
         # Apply stat modifiers
         stats = esper.component_for_entity(player_ent, Stats)
         for stat_name, value in item.stat_modifiers.items():
@@ -73,6 +75,10 @@ class ItemPickupSystem(esper.Processor):
             esper.add_component(player_ent, CollectedItems())
         collected = esper.component_for_entity(player_ent, CollectedItems)
         collected.items.append(item)
+
+        # Show notification
+        self.notification = f"Picked up: {item.name}"
+        self.notification_timer = Config.NOTIFICATION_DURATION
 
         # Remove item entity
         esper.delete_entity(item_ent)

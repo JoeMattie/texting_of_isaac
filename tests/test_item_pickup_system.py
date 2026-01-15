@@ -225,3 +225,69 @@ def test_pickup_creates_collected_items_if_missing():
     assert esper.has_component(player, CollectedItems)
     collected = esper.component_for_entity(player, CollectedItems)
     assert len(collected.items) == 1
+
+
+def test_pickup_shows_notification():
+    """Test notification is set after pickup."""
+    world_name = "test_world"
+    esper.switch_world(world_name)
+    from src.config import Config
+
+    # Create player
+    player = esper.create_entity()
+    esper.add_component(player, Player())
+    esper.add_component(player, Position(10.0, 10.0))
+    esper.add_component(player, Collider(0.3))
+    esper.add_component(player, Stats(5.0, 1.0, 0.3, 10.0))
+
+    # Create item
+    item_entity = esper.create_entity()
+    item_component = Item("magic_mushroom", {}, [])
+    esper.add_component(item_entity, item_component)
+    esper.add_component(item_entity, Position(10.0, 10.0))
+    esper.add_component(item_entity, Collider(0.4))
+
+    # Process pickup
+    system = ItemPickupSystem()
+    system.dt = 0.016
+    system.process()
+
+    # Verify notification set
+    assert system.notification == "Picked up: magic_mushroom"
+    assert system.notification_timer == Config.NOTIFICATION_DURATION
+
+
+def test_notification_clears_after_timer():
+    """Test notification disappears after timer expires."""
+    from src.config import Config
+
+    system = ItemPickupSystem()
+    system.notification = "Test message"
+    system.notification_timer = Config.NOTIFICATION_DURATION
+
+    # Advance time by 2.1 seconds
+    for _ in range(131):  # 131 frames * 0.016 = 2.096 seconds
+        system.dt = 0.016
+        system.process()
+
+    # Verify notification cleared
+    assert system.notification is None
+    assert system.notification_timer <= 0
+
+
+def test_notification_doesnt_clear_prematurely():
+    """Test notification remains visible during timer."""
+    from src.config import Config
+
+    system = ItemPickupSystem()
+    system.notification = "Test message"
+    system.notification_timer = Config.NOTIFICATION_DURATION
+
+    # Advance time by 1 second
+    for _ in range(62):  # 62 frames * 0.016 = 0.992 seconds
+        system.dt = 0.016
+        system.process()
+
+    # Verify notification still visible
+    assert system.notification == "Test message"
+    assert system.notification_timer > 0
