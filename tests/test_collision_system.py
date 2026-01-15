@@ -382,3 +382,119 @@ def test_player_death_on_negative_health():
     health = esper.component_for_entity(player, Health)
     assert health.current < 0
     assert esper.has_component(player, Dead)
+
+
+def test_piercing_projectile_doesnt_get_destroyed():
+    """Test piercing projectiles continue after hitting enemy."""
+    from src.components.game import CollectedItems, Item
+    from src.entities.player import create_player
+
+    world_name = "test_world"
+    esper.switch_world(world_name)
+    esper.clear_database()
+
+    # Create player with piercing effect
+    player = create_player(world_name, 10.0, 10.0)
+    collected = CollectedItems()
+    collected.items.append(Item("piercing_tears", {}, ["piercing"]))
+    esper.add_component(player, collected)
+
+    # Create enemy
+    from src.entities.enemies import create_enemy
+    enemy = create_enemy(world_name, "chaser", 15.0, 10.0)
+    enemy_health = esper.component_for_entity(enemy, Health)
+
+    # Create projectile from player
+    proj_entity = esper.create_entity()
+    esper.add_component(proj_entity, Position(15.0, 10.0))
+    from src.components.core import Velocity
+    esper.add_component(proj_entity, Velocity(10.0, 0.0))
+    esper.add_component(proj_entity, Collider(0.1))
+    esper.add_component(proj_entity, Projectile(1.0, player))
+
+    # Process collision
+    collision_system = CollisionSystem()
+    esper.add_processor(collision_system)
+    esper.process()
+
+    # Enemy should take damage
+    assert enemy_health.current < enemy_health.max
+
+    # Projectile should still exist (piercing)
+    assert esper.entity_exists(proj_entity)
+
+
+def test_normal_projectile_gets_destroyed():
+    """Test normal projectiles are destroyed after hitting enemy."""
+    from src.entities.player import create_player
+
+    world_name = "test_world"
+    esper.switch_world(world_name)
+    esper.clear_database()
+
+    # Create player without piercing
+    player = create_player(world_name, 10.0, 10.0)
+
+    # Create enemy
+    from src.entities.enemies import create_enemy
+    enemy = create_enemy(world_name, "chaser", 15.0, 10.0)
+
+    # Create projectile from player
+    proj_entity = esper.create_entity()
+    esper.add_component(proj_entity, Position(15.0, 10.0))
+    from src.components.core import Velocity
+    esper.add_component(proj_entity, Velocity(10.0, 0.0))
+    esper.add_component(proj_entity, Collider(0.1))
+    esper.add_component(proj_entity, Projectile(1.0, player))
+
+    # Process collision
+    collision_system = CollisionSystem()
+    esper.add_processor(collision_system)
+    esper.process()
+
+    # Projectile should be destroyed (normal shot)
+    assert not esper.entity_exists(proj_entity)
+
+
+def test_piercing_hits_multiple_enemies():
+    """Test piercing projectile damages all enemies in path."""
+    from src.components.game import CollectedItems, Item
+    from src.entities.player import create_player
+
+    world_name = "test_world"
+    esper.switch_world(world_name)
+    esper.clear_database()
+
+    # Create player with piercing
+    player = create_player(world_name, 10.0, 10.0)
+    collected = CollectedItems()
+    collected.items.append(Item("piercing_tears", {}, ["piercing"]))
+    esper.add_component(player, collected)
+
+    # Create 2 enemies in line
+    from src.entities.enemies import create_enemy
+    enemy1 = create_enemy(world_name, "chaser", 15.0, 10.0)
+    enemy2 = create_enemy(world_name, "chaser", 15.5, 10.0)
+
+    enemy1_health = esper.component_for_entity(enemy1, Health)
+    enemy2_health = esper.component_for_entity(enemy2, Health)
+
+    initial_hp1 = enemy1_health.current
+    initial_hp2 = enemy2_health.current
+
+    # Create projectile
+    proj_entity = esper.create_entity()
+    esper.add_component(proj_entity, Position(15.0, 10.0))
+    from src.components.core import Velocity
+    esper.add_component(proj_entity, Velocity(10.0, 0.0))
+    esper.add_component(proj_entity, Collider(0.1))
+    esper.add_component(proj_entity, Projectile(1.0, player))
+
+    # Process collision
+    collision_system = CollisionSystem()
+    esper.add_processor(collision_system)
+    esper.process()
+
+    # Both enemies should take damage
+    assert enemy1_health.current < initial_hp1
+    assert enemy2_health.current < initial_hp2

@@ -84,17 +84,32 @@ class CollisionSystem(esper.Processor):
             self._enemy_contact_player(e2, e1)
 
     def _projectile_hit_enemy(self, projectile: int, enemy: int):
-        """Handle projectile hitting enemy."""
+        """Handle projectile hitting enemy.
+
+        Args:
+            projectile: Projectile entity ID
+            enemy: Enemy entity ID
+        """
+        from src.components.game import Player, CollectedItems
+
         proj = esper.component_for_entity(projectile, Projectile)
         health = esper.component_for_entity(enemy, Health)
 
         # Apply damage
         health.current -= proj.damage
 
-        # Remove projectile
-        esper.delete_entity(projectile)
+        # Check for piercing effect
+        has_piercing = False
+        if esper.entity_exists(proj.owner) and esper.has_component(proj.owner, Player):
+            if esper.has_component(proj.owner, CollectedItems):
+                collected = esper.component_for_entity(proj.owner, CollectedItems)
+                has_piercing = collected.has_effect("piercing")
 
-        # Remove enemy if dead
+        # Remove projectile (unless piercing)
+        if not has_piercing:
+            esper.delete_entity(projectile)
+
+        # Check for enemy death
         if health.current <= 0:
             esper.delete_entity(enemy)
 
