@@ -93,3 +93,12 @@ def test_engine_has_item_pickup_system():
     processors = engine.world._processors
     item_pickup_systems = [p for p in processors if isinstance(p, ItemPickupSystem)]
     assert len(item_pickup_systems) == 1
+
+
+def test_engine_connects_render_to_item_pickup():
+    """Test that GameEngine connects RenderSystem to ItemPickupSystem."""
+    engine = GameEngine()
+
+    # Check RenderSystem has reference to ItemPickupSystem
+    assert hasattr(engine.render_system, 'item_pickup_system')
+    assert engine.render_system.item_pickup_system is engine.item_pickup_system

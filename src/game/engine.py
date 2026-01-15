@@ -57,6 +57,9 @@ class GameEngine:
         self.render_system = RenderSystem()
         self.world.add_processor(self.render_system, priority=7)
 
+        # Store reference for notifications
+        self.render_system.item_pickup_system = self.item_pickup_system
+
     def update(self, dt: float):
         """Update all systems.
 
