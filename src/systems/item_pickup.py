@@ -55,5 +55,15 @@ class ItemPickupSystem(esper.Processor):
             item_ent: Item entity ID
             item: Item component
         """
-        # Remove item entity (stat application in next task)
+        # Apply stat modifiers
+        stats = esper.component_for_entity(player_ent, Stats)
+        for stat_name, value in item.stat_modifiers.items():
+            if stat_name in ["damage", "fire_rate"]:
+                # Additive stats
+                setattr(stats, stat_name, getattr(stats, stat_name) + value)
+            elif stat_name in ["speed", "shot_speed"]:
+                # Multiplicative stats
+                setattr(stats, stat_name, getattr(stats, stat_name) * value)
+
+        # Remove item entity
         esper.delete_entity(item_ent)
