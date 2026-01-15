@@ -316,3 +316,69 @@ def test_enemy_contact_kills_player():
     health = esper.component_for_entity(player, Health)
     assert health.current <= 0
     assert esper.has_component(player, Dead)
+
+
+def test_player_death_on_zero_health():
+    """Test Dead component added when health reaches 0."""
+    esper.switch_world("test_player_death_zero")
+    esper.clear_database()
+
+    # Create player with 1 HP
+    player = esper.create_entity()
+    esper.add_component(player, Player())
+    esper.add_component(player, Position(10.0, 10.0))
+    esper.add_component(player, Health(1, 6))
+    esper.add_component(player, Collider(0.5))
+
+    # Create enemy
+    enemy = esper.create_entity()
+    esper.add_component(enemy, Enemy("shooter"))
+
+    # Create fatal projectile
+    projectile = esper.create_entity()
+    esper.add_component(projectile, Position(10.0, 10.0))
+    esper.add_component(projectile, Projectile(damage=1.0, owner=enemy))
+    esper.add_component(projectile, Collider(0.2))
+
+    # Process collision
+    system = CollisionSystem()
+    esper.add_processor(system)
+    esper.process()
+
+    # Verify death
+    health = esper.component_for_entity(player, Health)
+    assert health.current <= 0
+    assert esper.has_component(player, Dead)
+
+
+def test_player_death_on_negative_health():
+    """Test Dead component added even if damage exceeds remaining HP."""
+    esper.switch_world("test_player_death_negative")
+    esper.clear_database()
+
+    # Create player with 1 HP
+    player = esper.create_entity()
+    esper.add_component(player, Player())
+    esper.add_component(player, Position(10.0, 10.0))
+    esper.add_component(player, Health(1, 6))
+    esper.add_component(player, Collider(0.5))
+
+    # Create enemy
+    enemy = esper.create_entity()
+    esper.add_component(enemy, Enemy("shooter"))
+
+    # Create overkill projectile
+    projectile = esper.create_entity()
+    esper.add_component(projectile, Position(10.0, 10.0))
+    esper.add_component(projectile, Projectile(damage=5.0, owner=enemy))
+    esper.add_component(projectile, Collider(0.2))
+
+    # Process collision
+    system = CollisionSystem()
+    esper.add_processor(system)
+    esper.process()
+
+    # Verify death
+    health = esper.component_for_entity(player, Health)
+    assert health.current < 0
+    assert esper.has_component(player, Dead)
