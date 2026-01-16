@@ -5,6 +5,7 @@ import select
 import termios
 import tty
 from rich.console import Console
+from rich.live import Live
 from rich.panel import Panel
 from rich.table import Table
 from rich.layout import Layout
@@ -187,37 +188,38 @@ def main():
     time.sleep(1.0)
 
     try:
-        while engine.running and not input_handler.quit_pressed:
-            # Calculate delta time
-            current_time = time.time()
-            dt = current_time - last_time
-            last_time = current_time
+        # Use Live display to prevent flashing
+        with Live(console=console, auto_refresh=False) as live:
+            while engine.running and not input_handler.quit_pressed:
+                # Calculate delta time
+                current_time = time.time()
+                dt = current_time - last_time
+                last_time = current_time
 
-            # Update input
-            input_handler.update()
+                # Update input
+                input_handler.update()
 
-            # Set input on systems
-            engine.input_system.set_input(
-                input_handler.move_x,
-                input_handler.move_y,
-                input_handler.shoot_x,
-                input_handler.shoot_y
-            )
-            engine.shooting_system.shoot_x = input_handler.shoot_x
-            engine.shooting_system.shoot_y = input_handler.shoot_y
+                # Set input on systems
+                engine.input_system.set_input(
+                    input_handler.move_x,
+                    input_handler.move_y,
+                    input_handler.shoot_x,
+                    input_handler.shoot_y
+                )
+                engine.shooting_system.shoot_x = input_handler.shoot_x
+                engine.shooting_system.shoot_y = input_handler.shoot_y
 
-            # Update game
-            engine.update(dt)
+                # Update game
+                engine.update(dt)
 
-            # Render
-            console.clear()
-            layout = create_game_display(engine)
-            console.print(layout)
+                # Render using Live display (no flashing)
+                layout = create_game_display(engine)
+                live.update(layout, refresh=True)
 
-            # Sleep to maintain FPS
-            elapsed = time.time() - current_time
-            if elapsed < frame_time:
-                time.sleep(frame_time - elapsed)
+                # Sleep to maintain FPS
+                elapsed = time.time() - current_time
+                if elapsed < frame_time:
+                    time.sleep(frame_time - elapsed)
 
     except KeyboardInterrupt:
         console.clear()
