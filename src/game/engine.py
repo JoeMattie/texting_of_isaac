@@ -11,13 +11,18 @@ from src.systems.collision import CollisionSystem
 from src.systems.invincibility import InvincibilitySystem
 from src.systems.item_pickup import ItemPickupSystem
 from src.systems.render import RenderSystem
+from src.systems.minimap_system import MiniMapSystem
 
 
 class GameEngine:
     """Main game engine managing ECS world and game loop."""
 
-    def __init__(self):
-        """Initialize the game engine."""
+    def __init__(self, dungeon=None):
+        """Initialize the game engine.
+
+        Args:
+            dungeon: Optional Dungeon instance for minimap rendering
+        """
         # Esper uses module-level world management
         # Each engine gets its own world by name
         self.world_name = f"game_world_{id(self)}"
@@ -25,6 +30,7 @@ class GameEngine:
         self.world = esper  # Expose esper module as world interface
         self.running = True
         self.delta_time = 0.0
+        self.dungeon = dungeon
 
         # Create and register all systems with priority order
         self.input_system = InputSystem()
@@ -54,11 +60,16 @@ class GameEngine:
         self.item_pickup_system = ItemPickupSystem()
         self.world.add_processor(self.item_pickup_system, priority=6.5)
 
-        self.render_system = RenderSystem()
-        self.world.add_processor(self.render_system, priority=7)
+        # Create minimap system
+        minimap_system = MiniMapSystem()
 
-        # Store reference for notifications
-        self.render_system.item_pickup_system = self.item_pickup_system
+        # Create render system with dependencies
+        self.render_system = RenderSystem(
+            item_pickup_system=self.item_pickup_system,
+            minimap_system=minimap_system,
+            dungeon=dungeon
+        )
+        self.world.add_processor(self.render_system, priority=7)
 
     def update(self, dt: float):
         """Update all systems.
