@@ -87,8 +87,10 @@ class MiniMap:
         Returns:
             (min_x, min_y, max_x, max_y) - Display boundary coordinates
         """
+        from src.config import Config
+
         cx, cy = self.current_position
-        radius = 3
+        radius = Config.MINIMAP_DISPLAY_RADIUS
         return (cx - radius, cy - radius, cx + radius, cy + radius)
 
     def should_show_room(self, position: tuple[int, int], dungeon) -> bool:

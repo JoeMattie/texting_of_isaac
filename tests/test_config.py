@@ -284,3 +284,9 @@ def test_bomb_constants_are_positive():
 def test_minimap_radius_is_positive():
     """Verify minimap radius is positive."""
     assert Config.MINIMAP_DISPLAY_RADIUS > 0
+
+
+def test_minimap_display_radius_matches_implementation():
+    """Test MINIMAP_DISPLAY_RADIUS is 3 (7x7 grid = ±3 rooms)."""
+    from src.config import Config
+    assert Config.MINIMAP_DISPLAY_RADIUS == 3
