@@ -5,6 +5,7 @@ from src.entities.enemies import create_enemy
 from src.components.core import Position, Velocity, Health, Sprite
 from src.components.combat import Stats, Collider
 from src.components.game import Player, Enemy, AIBehavior
+from src.config import Config
 
 
 def test_create_player_returns_entity_id():
@@ -134,6 +135,6 @@ def test_create_player_has_currency():
     assert esper.has_component(player, Currency)
 
     currency = esper.component_for_entity(player, Currency)
-    assert currency.coins == 0
-    assert currency.bombs == 3  # Starting bombs from config
+    assert currency.coins == Config.STARTING_COINS
+    assert currency.bombs == Config.STARTING_BOMBS
     assert currency.keys == 0
