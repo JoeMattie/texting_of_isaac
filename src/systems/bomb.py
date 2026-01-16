@@ -2,7 +2,7 @@
 import esper
 import math
 from src.components.core import Position, Sprite, Health
-from src.components.game import Player
+from src.components.game import Player, Invincible
 from src.components.dungeon import Currency, Bomb
 from src.config import Config
 from src.systems.input import InputSystem
@@ -94,9 +94,13 @@ class BombSystem(esper.Processor):
             if health.current <= 0:
                 continue
 
+            # Skip players with invincibility frames
+            if esper.has_component(ent, Player) and esper.has_component(ent, Invincible):
+                continue
+
             # Calculate Euclidean distance from explosion center
             distance = math.sqrt((center.x - pos.x) ** 2 + (center.y - pos.y) ** 2)
 
             # Apply damage if within blast radius
             if distance <= radius:
-                health.current -= int(Config.BOMB_DAMAGE)
+                health.current -= Config.BOMB_DAMAGE

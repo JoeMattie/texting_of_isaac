@@ -627,7 +627,7 @@ def test_bomb_explosion_uses_config_damage_value():
     esper.process()
 
     # Check enemy took exactly Config.BOMB_DAMAGE (1.0) damage
-    assert enemy_health.current == original_health - int(Config.BOMB_DAMAGE)
+    assert enemy_health.current == original_health - Config.BOMB_DAMAGE
 
 
 def test_bomb_explosion_diagonal_distance():
@@ -675,3 +675,42 @@ def test_bomb_explosion_diagonal_distance():
     # Check only enemy2 took damage (enemy1 is out of range)
     assert health1.current == 3  # No damage
     assert health2.current == 3  # Took damage (was 4)
+
+
+def test_bomb_explosion_respects_player_invincibility():
+    """Test that bomb explosions respect player invincibility frames."""
+    from src.components.core import Health
+    from src.components.game import Player, Invincible
+
+    world_name = "test_bomb_explosion_invincibility"
+    esper.switch_world(world_name)
+    esper.clear_database()
+
+    input_system = InputSystem()
+    bomb_system = BombSystem(input_system)
+    esper.add_processor(bomb_system)
+
+    # Create player at center with invincibility frames
+    player = esper.create_entity()
+    esper.add_component(player, Position(30.0, 10.0))
+    esper.add_component(player, Player())
+    esper.add_component(player, Health(max_hp=6, current=6))
+    esper.add_component(player, Invincible(duration=1.0))
+
+    # Create bomb next to player (within blast radius)
+    bomb_ent = esper.create_entity()
+    esper.add_component(bomb_ent, Position(30.5, 10.0))
+    esper.add_component(bomb_ent, Sprite("●", "red"))
+    esper.add_component(bomb_ent, Bomb(fuse_time=0.1, blast_radius=2.0, owner=player))
+
+    # Get player health reference
+    player_health = esper.component_for_entity(player, Health)
+    original_health = player_health.current
+
+    # Process - bomb should explode
+    bomb_system.dt = 0.2
+    esper.process()
+
+    # Player should NOT take damage due to invincibility frames
+    assert player_health.current == original_health
+    assert player_health.current == 6  # No damage taken
