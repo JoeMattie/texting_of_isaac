@@ -3,6 +3,7 @@ import esper
 import math
 from src.components.core import Position, Health, Velocity
 from src.components.combat import Collider, Projectile
+from src.components.dungeon import Door
 from src.components.game import Enemy, Player
 
 
@@ -35,17 +36,19 @@ class CollisionSystem(esper.Processor):
 
         # Player-door collision for room transitions (only if room_manager available)
         if self.room_manager:
-            from src.components.dungeon import Door
-
+            transition_triggered = False
             for player_ent, (player, player_pos, player_collider) in esper.get_components(Player, Position, Collider):
                 for door_ent, (door, door_pos, door_collider) in esper.get_components(Door, Position, Collider):
                     # Only unlocked doors allow transitions
                     if not door.locked and self._check_collision(player_ent, door_ent, esper.current_world):
                         # Trigger room transition via RoomManager
                         self.room_manager.transition_to_room(door.leads_to, door.direction)
+                        transition_triggered = True
 
                         # Only transition through one door per frame
                         break
+                if transition_triggered:
+                    break
 
     def _check_collision(self, e1: int, e2: int, world_name: str) -> bool:
         """Check if two entities collide.
