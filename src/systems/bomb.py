@@ -1,6 +1,7 @@
 """Bomb placement and explosion system."""
 import esper
-from src.components.core import Position, Sprite
+import math
+from src.components.core import Position, Sprite, Health
 from src.components.game import Player
 from src.components.dungeon import Currency, Bomb
 from src.config import Config
@@ -71,10 +72,31 @@ class BombSystem(esper.Processor):
             bomb_ent: Entity ID of the bomb
             pos: Position of the bomb
             bomb: Bomb component
-
-        Note:
-            For now, this is a stub that just removes the bomb.
-            Explosion damage logic will be added in Task 4.
         """
-        # For now, just remove the bomb (explosion logic in Task 4)
+        # Show explosion effect (placeholder for future visual effects)
+        # self.spawn_explosion_effect(pos.x, pos.y)
+
+        # Damage entities in blast radius
+        self.damage_entities_in_radius(pos, bomb.blast_radius)
+
+        # Remove bomb
         esper.delete_entity(bomb_ent, immediate=True)
+
+    def damage_entities_in_radius(self, center: Position, radius: float):
+        """Deal damage to entities within blast radius.
+
+        Args:
+            center: Position of the explosion center
+            radius: Blast radius to check for damage
+        """
+        for ent, (pos, health) in esper.get_components(Position, Health):
+            # Skip entities that are already dead
+            if health.current <= 0:
+                continue
+
+            # Calculate Euclidean distance from explosion center
+            distance = math.sqrt((center.x - pos.x) ** 2 + (center.y - pos.y) ** 2)
+
+            # Apply damage if within blast radius
+            if distance <= radius:
+                health.current -= int(Config.BOMB_DAMAGE)

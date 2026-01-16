@@ -359,3 +359,319 @@ def test_bomb_system_negative_fuse_triggers_explosion():
     # Check bomb was removed
     bombs = list(esper.get_components(Bomb))
     assert len(bombs) == 0
+
+
+# ===== Task 4: Explosion Damage Tests =====
+
+def test_bomb_explosion_damages_enemy_in_range():
+    """Test that bomb explosion damages enemy within blast radius."""
+    from src.components.core import Health
+    from src.components.game import Enemy
+
+    world_name = "test_bomb_explosion_1"
+    esper.switch_world(world_name)
+    esper.clear_database()
+
+    input_system = InputSystem()
+    bomb_system = BombSystem(input_system)
+    esper.add_processor(bomb_system)
+
+    # Create enemy near bomb location
+    enemy = esper.create_entity()
+    esper.add_component(enemy, Position(30.0, 10.0))
+    esper.add_component(enemy, Health(current=3, max_hp=3))
+    esper.add_component(enemy, Enemy(type="chaser"))
+
+    # Create bomb that will explode at same position
+    bomb_ent = esper.create_entity()
+    esper.add_component(bomb_ent, Position(30.0, 10.0))
+    esper.add_component(bomb_ent, Sprite("●", "red"))
+    esper.add_component(bomb_ent, Bomb(fuse_time=0.1, blast_radius=2.0, owner=0))
+
+    # Get enemy health reference
+    enemy_health = esper.component_for_entity(enemy, Health)
+
+    # Process - bomb should explode and damage enemy
+    bomb_system.dt = 0.2
+    esper.process()
+
+    # Check enemy took damage (1.0 damage = 1 heart)
+    assert enemy_health.current == 2
+
+
+def test_bomb_explosion_damages_player_in_range():
+    """Test that bomb explosion can damage the player (self-damage)."""
+    from src.components.core import Health
+
+    world_name = "test_bomb_explosion_2"
+    esper.switch_world(world_name)
+    esper.clear_database()
+
+    input_system = InputSystem()
+    bomb_system = BombSystem(input_system)
+    esper.add_processor(bomb_system)
+
+    # Create player near bomb location
+    player = esper.create_entity()
+    esper.add_component(player, Player())
+    esper.add_component(player, Position(31.0, 10.0))
+    esper.add_component(player, Health(current=6, max_hp=6))
+    esper.add_component(player, Currency(coins=0, bombs=1))
+
+    # Create bomb that will explode close to player
+    bomb_ent = esper.create_entity()
+    esper.add_component(bomb_ent, Position(30.0, 10.0))
+    esper.add_component(bomb_ent, Sprite("●", "red"))
+    esper.add_component(bomb_ent, Bomb(fuse_time=0.1, blast_radius=2.0, owner=player))
+
+    # Get player health reference
+    player_health = esper.component_for_entity(player, Health)
+
+    # Process - bomb should explode and damage player
+    bomb_system.dt = 0.2
+    esper.process()
+
+    # Check player took damage
+    assert player_health.current == 5
+
+
+def test_bomb_explosion_does_not_damage_entities_out_of_range():
+    """Test that entities outside blast radius are not damaged."""
+    from src.components.core import Health
+    from src.components.game import Enemy
+
+    world_name = "test_bomb_explosion_3"
+    esper.switch_world(world_name)
+    esper.clear_database()
+
+    input_system = InputSystem()
+    bomb_system = BombSystem(input_system)
+    esper.add_processor(bomb_system)
+
+    # Create enemy far from bomb (outside blast radius of 2.0)
+    enemy = esper.create_entity()
+    esper.add_component(enemy, Position(35.0, 10.0))  # 5 units away
+    esper.add_component(enemy, Health(current=3, max_hp=3))
+    esper.add_component(enemy, Enemy(type="chaser"))
+
+    # Create bomb
+    bomb_ent = esper.create_entity()
+    esper.add_component(bomb_ent, Position(30.0, 10.0))
+    esper.add_component(bomb_ent, Sprite("●", "red"))
+    esper.add_component(bomb_ent, Bomb(fuse_time=0.1, blast_radius=2.0, owner=0))
+
+    # Get enemy health reference
+    enemy_health = esper.component_for_entity(enemy, Health)
+
+    # Process - bomb should explode but not damage enemy
+    bomb_system.dt = 0.2
+    esper.process()
+
+    # Check enemy did NOT take damage
+    assert enemy_health.current == 3
+
+
+def test_bomb_explosion_damages_multiple_entities():
+    """Test that bomb damages all entities within blast radius."""
+    from src.components.core import Health
+    from src.components.game import Enemy
+
+    world_name = "test_bomb_explosion_4"
+    esper.switch_world(world_name)
+    esper.clear_database()
+
+    input_system = InputSystem()
+    bomb_system = BombSystem(input_system)
+    esper.add_processor(bomb_system)
+
+    # Create multiple enemies at different distances
+    enemy1 = esper.create_entity()
+    esper.add_component(enemy1, Position(30.0, 10.0))  # At bomb location
+    esper.add_component(enemy1, Health(current=4, max_hp=4))
+    esper.add_component(enemy1, Enemy(type="chaser"))
+
+    enemy2 = esper.create_entity()
+    esper.add_component(enemy2, Position(31.5, 10.0))  # 1.5 units away
+    esper.add_component(enemy2, Health(current=5, max_hp=5))
+    esper.add_component(enemy2, Enemy(type="shooter"))
+
+    enemy3 = esper.create_entity()
+    esper.add_component(enemy3, Position(28.5, 12.0))  # ~2.5 units away (outside range)
+    esper.add_component(enemy3, Health(current=3, max_hp=3))
+    esper.add_component(enemy3, Enemy(type="orbiter"))
+
+    # Create bomb
+    bomb_ent = esper.create_entity()
+    esper.add_component(bomb_ent, Position(30.0, 10.0))
+    esper.add_component(bomb_ent, Sprite("●", "red"))
+    esper.add_component(bomb_ent, Bomb(fuse_time=0.1, blast_radius=2.0, owner=0))
+
+    # Get health references
+    health1 = esper.component_for_entity(enemy1, Health)
+    health2 = esper.component_for_entity(enemy2, Health)
+    health3 = esper.component_for_entity(enemy3, Health)
+
+    # Process - bomb should explode
+    bomb_system.dt = 0.2
+    esper.process()
+
+    # Check enemy1 and enemy2 took damage, enemy3 didn't
+    assert health1.current == 3  # Was 4, now 3
+    assert health2.current == 4  # Was 5, now 4
+    assert health3.current == 3  # Was 3, still 3 (out of range)
+
+
+def test_bomb_explosion_does_not_damage_dead_entities():
+    """Test that entities with health <= 0 don't take damage."""
+    from src.components.core import Health
+    from src.components.game import Enemy
+
+    world_name = "test_bomb_explosion_5"
+    esper.switch_world(world_name)
+    esper.clear_database()
+
+    input_system = InputSystem()
+    bomb_system = BombSystem(input_system)
+    esper.add_processor(bomb_system)
+
+    # Create enemy that's already dead
+    enemy = esper.create_entity()
+    esper.add_component(enemy, Position(30.0, 10.0))
+    esper.add_component(enemy, Health(current=0, max_hp=3))  # Dead
+    esper.add_component(enemy, Enemy(type="chaser"))
+
+    # Create bomb at same position
+    bomb_ent = esper.create_entity()
+    esper.add_component(bomb_ent, Position(30.0, 10.0))
+    esper.add_component(bomb_ent, Sprite("●", "red"))
+    esper.add_component(bomb_ent, Bomb(fuse_time=0.1, blast_radius=2.0, owner=0))
+
+    # Get enemy health reference
+    enemy_health = esper.component_for_entity(enemy, Health)
+
+    # Process - bomb should explode but not damage dead enemy
+    bomb_system.dt = 0.2
+    esper.process()
+
+    # Check enemy health didn't go negative
+    assert enemy_health.current == 0
+
+
+def test_bomb_explosion_at_edge_of_radius():
+    """Test that bomb damages entity exactly at the edge of blast radius."""
+    from src.components.core import Health
+    from src.components.game import Enemy
+
+    world_name = "test_bomb_explosion_6"
+    esper.switch_world(world_name)
+    esper.clear_database()
+
+    input_system = InputSystem()
+    bomb_system = BombSystem(input_system)
+    esper.add_processor(bomb_system)
+
+    # Create enemy exactly at blast radius distance (2.0)
+    enemy = esper.create_entity()
+    esper.add_component(enemy, Position(32.0, 10.0))  # Exactly 2.0 units away
+    esper.add_component(enemy, Health(current=3, max_hp=3))
+    esper.add_component(enemy, Enemy(type="chaser"))
+
+    # Create bomb
+    bomb_ent = esper.create_entity()
+    esper.add_component(bomb_ent, Position(30.0, 10.0))
+    esper.add_component(bomb_ent, Sprite("●", "red"))
+    esper.add_component(bomb_ent, Bomb(fuse_time=0.1, blast_radius=2.0, owner=0))
+
+    # Get enemy health reference
+    enemy_health = esper.component_for_entity(enemy, Health)
+
+    # Process - bomb should explode and damage enemy (distance <= radius)
+    bomb_system.dt = 0.2
+    esper.process()
+
+    # Check enemy took damage
+    assert enemy_health.current == 2
+
+
+def test_bomb_explosion_uses_config_damage_value():
+    """Test that bomb uses Config.BOMB_DAMAGE for damage amount."""
+    from src.components.core import Health
+    from src.components.game import Enemy
+
+    world_name = "test_bomb_explosion_7"
+    esper.switch_world(world_name)
+    esper.clear_database()
+
+    input_system = InputSystem()
+    bomb_system = BombSystem(input_system)
+    esper.add_processor(bomb_system)
+
+    # Create enemy
+    enemy = esper.create_entity()
+    esper.add_component(enemy, Position(30.0, 10.0))
+    esper.add_component(enemy, Health(current=10, max_hp=10))
+    esper.add_component(enemy, Enemy(type="tank"))
+
+    # Create bomb
+    bomb_ent = esper.create_entity()
+    esper.add_component(bomb_ent, Position(30.0, 10.0))
+    esper.add_component(bomb_ent, Sprite("●", "red"))
+    esper.add_component(bomb_ent, Bomb(fuse_time=0.1, blast_radius=2.0, owner=0))
+
+    # Get enemy health reference
+    enemy_health = esper.component_for_entity(enemy, Health)
+    original_health = enemy_health.current
+
+    # Process - bomb should explode
+    bomb_system.dt = 0.2
+    esper.process()
+
+    # Check enemy took exactly Config.BOMB_DAMAGE (1.0) damage
+    assert enemy_health.current == original_health - int(Config.BOMB_DAMAGE)
+
+
+def test_bomb_explosion_diagonal_distance():
+    """Test that bomb uses Euclidean distance for damage calculation."""
+    from src.components.core import Health
+    from src.components.game import Enemy
+    import math
+
+    world_name = "test_bomb_explosion_8"
+    esper.switch_world(world_name)
+    esper.clear_database()
+
+    input_system = InputSystem()
+    bomb_system = BombSystem(input_system)
+    esper.add_processor(bomb_system)
+
+    # Create enemy at diagonal position
+    # Distance = sqrt(1.5^2 + 1.5^2) = sqrt(4.5) ≈ 2.12 (outside range of 2.0)
+    enemy1 = esper.create_entity()
+    esper.add_component(enemy1, Position(31.5, 11.5))
+    esper.add_component(enemy1, Health(current=3, max_hp=3))
+    esper.add_component(enemy1, Enemy(type="chaser"))
+
+    # Create enemy closer diagonally
+    # Distance = sqrt(1^2 + 1^2) = sqrt(2) ≈ 1.41 (inside range of 2.0)
+    enemy2 = esper.create_entity()
+    esper.add_component(enemy2, Position(31.0, 11.0))
+    esper.add_component(enemy2, Health(current=4, max_hp=4))
+    esper.add_component(enemy2, Enemy(type="shooter"))
+
+    # Create bomb
+    bomb_ent = esper.create_entity()
+    esper.add_component(bomb_ent, Position(30.0, 10.0))
+    esper.add_component(bomb_ent, Sprite("●", "red"))
+    esper.add_component(bomb_ent, Bomb(fuse_time=0.1, blast_radius=2.0, owner=0))
+
+    # Get health references
+    health1 = esper.component_for_entity(enemy1, Health)
+    health2 = esper.component_for_entity(enemy2, Health)
+
+    # Process - bomb should explode
+    bomb_system.dt = 0.2
+    esper.process()
+
+    # Check only enemy2 took damage (enemy1 is out of range)
+    assert health1.current == 3  # No damage
+    assert health2.current == 3  # Took damage (was 4)
