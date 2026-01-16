@@ -1,7 +1,9 @@
 """Dungeon generation and data structures."""
+import random
 from enum import Enum
 from dataclasses import dataclass, field
 from typing import Optional
+from src.config import Config
 
 
 class RoomType(Enum):
@@ -99,3 +101,121 @@ def get_opposite_direction(direction: str) -> str:
     if direction not in opposites:
         raise ValueError(f"Invalid direction: {direction}. Must be one of: north, south, east, west")
     return opposites[direction]
+
+
+def generate_dungeon(target_size: int = 15) -> Dungeon:
+    """Generate dungeon using main path first algorithm.
+
+    Args:
+        target_size: Target number of rooms (12-18)
+
+    Returns:
+        Complete dungeon with guaranteed path to boss
+    """
+    dungeon = Dungeon()
+
+    # Step 1: Place start room at (0, 0)
+    start_pos = (0, 0)
+    start_room = DungeonRoom(
+        position=start_pos,
+        room_type=RoomType.START,
+        doors={},
+        visited=False,
+        cleared=True,
+        state=RoomState.PEACEFUL
+    )
+    dungeon.rooms[start_pos] = start_room
+    dungeon.start_position = start_pos
+    dungeon.main_path.append(start_pos)
+
+    # Step 2: Generate main path (10-12 rooms including start)
+    current_pos = start_pos
+    main_path_length = random.randint(10, 12)
+
+    for i in range(main_path_length - 1):  # -1 because start already placed
+        # Choose next position (random walk)
+        next_pos = _choose_next_position(current_pos, dungeon.rooms)
+
+        # Determine room type
+        if i == int(main_path_length * 0.4):
+            room_type = RoomType.MINIBOSS
+            dungeon.miniboss_position = next_pos
+        elif i == main_path_length - 2:
+            room_type = RoomType.BOSS
+            dungeon.boss_position = next_pos
+        else:
+            room_type = RoomType.COMBAT
+
+        # Create room
+        room = DungeonRoom(
+            position=next_pos,
+            room_type=room_type,
+            doors={},
+            enemies=_generate_enemy_config(room_type) if room_type == RoomType.COMBAT else []
+        )
+        dungeon.rooms[next_pos] = room
+
+        # Create bidirectional door connection
+        direction = get_direction(current_pos, next_pos)
+        opposite = get_opposite_direction(direction)
+        dungeon.rooms[current_pos].doors[direction] = next_pos
+        dungeon.rooms[next_pos].doors[opposite] = current_pos
+
+        dungeon.main_path.append(next_pos)
+        current_pos = next_pos
+
+    return dungeon
+
+
+def _choose_next_position(current: tuple[int, int], existing_rooms: dict) -> tuple[int, int]:
+    """Choose next position for main path.
+
+    Args:
+        current: Current position
+        existing_rooms: Already placed rooms
+
+    Returns:
+        Next position for path
+
+    Raises:
+        Exception: If no available positions
+    """
+    x, y = current
+    directions = [
+        (x, y + 1),  # South
+        (x, y - 1),  # North
+        (x + 1, y),  # East
+        (x - 1, y),  # West
+    ]
+
+    # Filter out positions that already have rooms
+    available = [pos for pos in directions if pos not in existing_rooms]
+
+    if not available:
+        raise Exception("No available positions - dungeon generation stuck")
+
+    return random.choice(available)
+
+
+def _generate_enemy_config(room_type: RoomType) -> list[dict]:
+    """Generate enemy spawn configuration for room.
+
+    Args:
+        room_type: Type of room
+
+    Returns:
+        List of enemy spawn configs
+    """
+    if room_type == RoomType.COMBAT:
+        num_enemies = random.randint(2, 5)
+        enemy_types = ["chaser", "shooter", "orbiter", "turret", "tank"]
+
+        return [
+            {"type": random.choice(enemy_types), "count": 1}
+            for _ in range(num_enemies)
+        ]
+    elif room_type == RoomType.MINIBOSS:
+        miniboss_type = random.choice(["glutton", "hoarder", "sentinel"])
+        return [{"type": miniboss_type, "count": 1}]
+    else:
+        return []
