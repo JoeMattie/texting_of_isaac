@@ -163,27 +163,30 @@ def generate_dungeon(target_size: int = 15) -> Dungeon:
         dungeon.main_path.append(next_pos)
         current_pos = next_pos
 
-    # Step 3: Add special room branches (4-6 rooms)
-    special_rooms_added = 0
+    # Step 3: Add special room branches (4-6 rooms total)
     max_special = random.randint(4, 6)
+    num_treasure = random.randint(2, 3)
+    num_shops = random.randint(1, 2)
 
-    # Add 2-3 treasure rooms
-    for _ in range(random.randint(2, 3)):
-        if special_rooms_added >= max_special:
-            break
+    # Ensure we don't exceed max_special
+    total_desired = num_treasure + num_shops
+    if total_desired > max_special:
+        # Reduce shops first since treasure rooms are more valuable
+        num_shops = max(1, max_special - num_treasure)
+        if num_treasure + num_shops > max_special:
+            num_treasure = max_special - num_shops
+
+    # Add treasure rooms
+    for _ in range(num_treasure):
         branch_pos = _add_branch_room(dungeon, RoomType.TREASURE)
         if branch_pos:
             dungeon.treasure_rooms.append(branch_pos)
-            special_rooms_added += 1
 
-    # Add 1-2 shops
-    for _ in range(random.randint(1, 2)):
-        if special_rooms_added >= max_special:
-            break
+    # Add shops
+    for _ in range(num_shops):
         branch_pos = _add_branch_room(dungeon, RoomType.SHOP)
         if branch_pos:
             dungeon.shop_rooms.append(branch_pos)
-            special_rooms_added += 1
 
     return dungeon
 
@@ -252,7 +255,7 @@ def _add_branch_room(dungeon: Dungeon, room_type: RoomType) -> tuple[int, int] |
     Returns:
         Position of new room, or None if couldn't place
     """
-    # Select random room on main path as branch point (not too close to boss)
+    # Select random room on main path as branch point (exclude last 3 rooms near boss)
     eligible_rooms = dungeon.main_path[:-3]
     if not eligible_rooms:
         return None
