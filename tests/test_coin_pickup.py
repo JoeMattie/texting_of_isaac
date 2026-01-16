@@ -92,3 +92,12 @@ def test_coin_with_custom_value():
 
     assert not esper.entity_exists(nickel)
     assert currency.coins == initial_coins + 5
+
+
+def test_coin_validates_positive_value():
+    """Test Coin validates positive values."""
+    with pytest.raises(ValueError, match="value must be positive"):
+        Coin(value=0)
+
+    with pytest.raises(ValueError, match="value must be positive"):
+        Coin(value=-1)
