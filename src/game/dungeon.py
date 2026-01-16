@@ -112,6 +112,32 @@ def generate_dungeon(target_size: int = 15) -> Dungeon:
 
     Returns:
         Complete dungeon with guaranteed path to boss
+
+    Raises:
+        RuntimeError: If unable to generate valid dungeon after 10 attempts
+    """
+    max_attempts = 10
+    for attempt in range(max_attempts):
+        try:
+            return _generate_dungeon_attempt(target_size)
+        except RuntimeError as e:
+            if attempt == max_attempts - 1:
+                raise RuntimeError(f"Failed to generate dungeon after {max_attempts} attempts") from e
+            # Try again with fresh random walk
+            continue
+
+
+def _generate_dungeon_attempt(target_size: int = 15) -> Dungeon:
+    """Single attempt to generate a dungeon.
+
+    Args:
+        target_size: Target number of rooms (12-18)
+
+    Returns:
+        Complete dungeon with guaranteed path to boss
+
+    Raises:
+        RuntimeError: If random walk gets stuck
     """
     dungeon = Dungeon()
 
