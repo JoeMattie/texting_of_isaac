@@ -468,3 +468,35 @@ def test_spawn_room_contents_unlocks_doors_in_cleared_room():
     # Verify door is unlocked
     _, (door_component,) = doors[0]
     assert door_component.locked == False
+
+
+def test_despawn_current_room_entities_removes_doors():
+    """Test despawn_current_room_entities removes all Door entities."""
+    from src.components.dungeon import Door
+
+    dungeon = Dungeon()
+    room = DungeonRoom(
+        position=(0, 0),
+        room_type=RoomType.START,
+        doors={"north": (0, 1), "east": (1, 0), "south": (0, -1)},
+        state=RoomState.PEACEFUL
+    )
+    dungeon.rooms[(0, 0)] = room
+    dungeon.start_position = (0, 0)
+
+    manager = RoomManager(dungeon)
+    esper.switch_world("main")
+
+    # Spawn doors
+    manager.spawn_room_contents()
+
+    # Verify doors exist
+    doors_before = list(esper.get_components(Door))
+    assert len(doors_before) == 3
+
+    # Despawn all entities
+    manager.despawn_current_room_entities()
+
+    # Verify all doors removed
+    doors_after = list(esper.get_components(Door))
+    assert len(doors_after) == 0

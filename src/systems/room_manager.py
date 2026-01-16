@@ -31,16 +31,17 @@ class RoomManager(esper.Processor):
 
         This method will despawn enemies, projectiles, doors, and other
         room-specific entities when transitioning to a new room.
-
-        Implementation will be added when entity systems are integrated.
         """
-        # TODO: Implement entity despawning in integration tasks
-        # Will need to:
+        from src.components.dungeon import Door
+
+        # Delete all door entities
+        for entity, (door,) in esper.get_components(Door):
+            esper.delete_entity(entity, immediate=True)
+
+        # TODO: Implement additional entity despawning in integration tasks
         # - Delete all enemies (esper.get_components(Enemy))
         # - Delete all projectiles (esper.get_components(Projectile))
-        # - Delete all doors (esper.get_components(Door))
         # - Keep player entity
-        pass
 
     def spawn_room_contents(self) -> None:
         """Spawn entities for current room.
