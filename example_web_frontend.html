@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Texting of Isaac - Web Frontend</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+            font-family: monospace;
+        }
+
+        #game-container {
+            display: flex;
+            gap: 20px;
+        }
+
+        #game-canvas {
+            border: 2px solid #444;
+            background: #000;
+            image-rendering: pixelated;
+        }
+
+        #ui-panel {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 5px;
+            min-width: 200px;
+        }
+
+        .ui-section {
+            margin-bottom: 15px;
+        }
+
+        .ui-label {
+            color: #888;
+            font-size: 12px;
+        }
+
+        .ui-value {
+            font-size: 16px;
+            margin: 5px 0;
+        }
+
+        .heart {
+            color: #ff4444;
+        }
+
+        .coin {
+            color: #ffaa00;
+        }
+
+        #fps {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: #0f0;
+        }
+    </style>
+</head>
+<body>
+    <div id="fps">FPS: 0</div>
+
+    <h1>Texting of Isaac - Web Frontend Demo</h1>
+
+    <div id="game-container">
+        <canvas id="game-canvas" width="1920" height="640"></canvas>
+
+        <div id="ui-panel">
+            <div class="ui-section">
+                <div class="ui-label">HEALTH</div>
+                <div class="ui-value heart" id="health">♥♥♥ 3/3</div>
+            </div>
+
+            <div class="ui-section">
+                <div class="ui-label">COINS</div>
+                <div class="ui-value coin" id="coins">$ 0</div>
+            </div>
+
+            <div class="ui-section">
+                <div class="ui-label">BOMBS</div>
+                <div class="ui-value" id="bombs">💣 0</div>
+            </div>
+
+            <div class="ui-section">
+                <div class="ui-label">ITEMS</div>
+                <div class="ui-value" id="items">None</div>
+            </div>
+
+            <div class="ui-section">
+                <div class="ui-label">ROOM</div>
+                <div class="ui-value" id="room">(0, 0)</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game state rendering
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Sprite configuration
+        const TILE_SIZE = 32;  // Pixels per tile
+        const ROOM_WIDTH = 60;
+        const ROOM_HEIGHT = 20;
+
+        // Example sprite mapping (you'd load actual sprite images)
+        const SPRITE_MAP = {
+            'player': {char: '@', color: '#00ff00'},
+            'enemy_chaser': {char: 'C', color: '#ff0000'},
+            'enemy_shooter': {char: 'S', color: '#ff4444'},
+            'door': {char: '▯', color: '#00ffff'},
+            'coin': {char: '$', color: '#ffaa00'},
+            'heart': {char: '♥', color: '#ff0000'},
+            'projectile': {char: '•', color: '#ffffff'},
+        };
+
+        // FPS tracking
+        let lastFrameTime = Date.now();
+        let fps = 0;
+
+        function renderGameState(gameState) {
+            // Clear canvas
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw grid background
+            ctx.strokeStyle = '#111';
+            for (let x = 0; x < ROOM_WIDTH; x++) {
+                ctx.beginPath();
+                ctx.moveTo(x * TILE_SIZE, 0);
+                ctx.lineTo(x * TILE_SIZE, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < ROOM_HEIGHT; y++) {
+                ctx.beginPath();
+                ctx.moveTo(0, y * TILE_SIZE);
+                ctx.lineTo(canvas.width, y * TILE_SIZE);
+                ctx.stroke();
+            }
+
+            // Render all entities
+            gameState.entities.forEach(entity => {
+                if (!entity.components.position || !entity.components.sprite) return;
+
+                const pos = entity.components.position;
+                const sprite = entity.components.sprite;
+
+                const x = Math.floor(pos.x * TILE_SIZE);
+                const y = Math.floor(pos.y * TILE_SIZE);
+
+                // Draw entity
+                ctx.fillStyle = sprite.color;
+                ctx.font = `${TILE_SIZE - 4}px monospace`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(sprite.char, x + TILE_SIZE/2, y + TILE_SIZE/2);
+
+                // Draw health bar for entities with health
+                if (entity.components.health && entity.type !== 'player') {
+                    const health = entity.components.health;
+                    const healthPercent = health.current / health.max;
+
+                    ctx.fillStyle = '#ff0000';
+                    ctx.fillRect(x, y - 4, TILE_SIZE * healthPercent, 2);
+                }
+            });
+
+            // Update UI
+            updateUI(gameState);
+
+            // Update FPS
+            updateFPS();
+        }
+
+        function updateUI(gameState) {
+            // Health
+            const health = gameState.ui.health;
+            const hearts = '♥'.repeat(Math.ceil(health.current));
+            document.getElementById('health').textContent = `${hearts} ${health.current}/${health.max}`;
+
+            // Currency
+            document.getElementById('coins').textContent = `$ ${gameState.ui.currency.coins}`;
+            document.getElementById('bombs').textContent = `💣 ${gameState.ui.currency.bombs}`;
+
+            // Items
+            const items = gameState.ui.items.length > 0
+                ? gameState.ui.items.join(', ')
+                : 'None';
+            document.getElementById('items').textContent = items;
+
+            // Room position
+            if (gameState.room.position) {
+                const [x, y] = gameState.room.position;
+                document.getElementById('room').textContent = `(${x}, ${y})`;
+            }
+        }
+
+        function updateFPS() {
+            const now = Date.now();
+            const delta = now - lastFrameTime;
+            fps = Math.round(1000 / delta);
+            lastFrameTime = now;
+            document.getElementById('fps').textContent = `FPS: ${fps}`;
+        }
+
+        // Example: Connect to game via WebSocket
+        function connectToGame() {
+            const ws = new WebSocket('ws://localhost:8765');
+
+            ws.onmessage = (event) => {
+                const gameState = JSON.parse(event.data);
+                renderGameState(gameState);
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+
+            return ws;
+        }
+
+        // For demo purposes, render a mock game state
+        function renderMockState() {
+            const mockState = {
+                frame: { width: 60, height: 20 },
+                entities: [
+                    {
+                        id: 1,
+                        type: 'player',
+                        components: {
+                            position: { x: 30, y: 10 },
+                            sprite: { char: '@', color: '#00ff00' },
+                            health: { current: 3, max: 3 }
+                        }
+                    },
+                    {
+                        id: 2,
+                        type: 'enemy_chaser',
+                        components: {
+                            position: { x: 45, y: 8 },
+                            sprite: { char: 'C', color: '#ff0000' },
+                            health: { current: 2, max: 3 }
+                        }
+                    },
+                    {
+                        id: 3,
+                        type: 'door',
+                        components: {
+                            position: { x: 30, y: 0 },
+                            sprite: { char: '▯', color: '#00ffff' }
+                        }
+                    },
+                    {
+                        id: 4,
+                        type: 'coin',
+                        components: {
+                            position: { x: 35, y: 12 },
+                            sprite: { char: '$', color: '#ffaa00' }
+                        }
+                    }
+                ],
+                player: {
+                    id: 1,
+                    type: 'player',
+                    components: {
+                        position: { x: 30, y: 10 },
+                        sprite: { char: '@', color: '#00ff00' },
+                        health: { current: 3, max: 3 }
+                    }
+                },
+                ui: {
+                    currency: { coins: 12, bombs: 3 },
+                    health: { current: 3, max: 3 },
+                    items: ['piercing', 'multi_shot']
+                },
+                room: {
+                    position: [0, 0],
+                    doors: []
+                }
+            };
+
+            renderGameState(mockState);
+        }
+
+        // Render mock state on load
+        renderMockState();
+
+        // Uncomment to connect to actual game server:
+        // const gameSocket = connectToGame();
+    </script>
+</body>
+</html>
