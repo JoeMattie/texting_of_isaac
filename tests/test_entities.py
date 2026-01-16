@@ -119,3 +119,21 @@ def test_create_player_has_collected_items():
     # Check it starts empty
     collected_items = esper.component_for_entity(entity_id, CollectedItems)
     assert collected_items.items == []
+
+
+def test_create_player_has_currency():
+    """Test player entity has Currency component."""
+    from src.components.dungeon import Currency
+
+    world = "test_player_currency"
+    esper.switch_world(world)
+    esper.clear_database()
+
+    player = create_player(world, 30.0, 20.0)
+
+    assert esper.has_component(player, Currency)
+
+    currency = esper.component_for_entity(player, Currency)
+    assert currency.coins == 0
+    assert currency.bombs == 3  # Starting bombs from config
+    assert currency.keys == 0
