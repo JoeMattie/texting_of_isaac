@@ -4,6 +4,8 @@ from enum import Enum
 from dataclasses import dataclass, field
 from typing import Optional
 
+from src.config import Config
+
 
 class RoomType(Enum):
     """Types of rooms in the dungeon."""
@@ -188,6 +190,13 @@ def generate_dungeon(target_size: int = 15) -> Dungeon:
         if branch_pos:
             dungeon.shop_rooms.append(branch_pos)
 
+    # Step 4: Add secret rooms (1-2 rooms)
+    num_secrets = random.randint(Config.SECRET_COUNT_MIN, Config.SECRET_COUNT_MAX)
+    for _ in range(num_secrets):
+        secret_pos = _add_secret_room(dungeon)
+        if secret_pos:
+            dungeon.secret_rooms.append(secret_pos)
+
     return dungeon
 
 
@@ -290,3 +299,51 @@ def _add_branch_room(dungeon: Dungeon, room_type: RoomType) -> tuple[int, int] |
     dungeon.rooms[new_pos].doors[opposite] = branch_point
 
     return new_pos
+
+
+def _add_secret_room(dungeon: Dungeon) -> tuple[int, int] | None:
+    """Add a secret room accessible via secret wall.
+
+    Args:
+        dungeon: Dungeon being generated
+
+    Returns:
+        Position of new secret room, or None if couldn't place
+    """
+    # Select random room from main path (exclude start and last 3 rooms)
+    eligible_rooms = dungeon.main_path[1:-3]
+    if not eligible_rooms:
+        return None
+
+    # Try up to 10 times to find a valid placement
+    for _ in range(10):
+        anchor_room_pos = random.choice(eligible_rooms)
+
+        # Find available adjacent position
+        x, y = anchor_room_pos
+        candidates = [
+            (x, y + 1), (x, y - 1), (x + 1, y), (x - 1, y)
+        ]
+
+        available = [pos for pos in candidates if pos not in dungeon.rooms]
+        if not available:
+            continue
+
+        secret_pos = random.choice(available)
+
+        # Create secret room with no doors
+        secret_room = DungeonRoom(
+            position=secret_pos,
+            room_type=RoomType.SECRET,
+            doors={},
+            enemies=[]
+        )
+        dungeon.rooms[secret_pos] = secret_room
+
+        # Add secret wall to anchor room
+        direction = get_direction(anchor_room_pos, secret_pos)
+        dungeon.rooms[anchor_room_pos].secret_walls.append(direction)
+
+        return secret_pos
+
+    return None

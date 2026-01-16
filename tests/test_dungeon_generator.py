@@ -93,3 +93,45 @@ def test_special_rooms_connected_to_main_path():
         # The connected room should be on main path
         connected_pos = list(special_room.doors.values())[0]
         assert connected_pos in dungeon.main_path
+
+
+def test_dungeon_has_secret_rooms():
+    """Verify dungeon has 1-2 secret rooms."""
+    dungeon = generate_dungeon(15)
+    assert 1 <= len(dungeon.secret_rooms) <= 2
+
+    for secret_pos in dungeon.secret_rooms:
+        assert dungeon.rooms[secret_pos].room_type == RoomType.SECRET
+
+
+def test_secret_rooms_have_secret_walls():
+    """Verify secret rooms accessible via secret wall."""
+    dungeon = generate_dungeon(15)
+
+    for secret_pos in dungeon.secret_rooms:
+        secret_room = dungeon.rooms[secret_pos]
+
+        # Secret room should have no visible doors
+        assert len(secret_room.doors) == 0
+
+        # Find the adjacent room with the secret wall
+        x, y = secret_pos
+        adjacent_positions = [(x, y + 1), (x, y - 1), (x + 1, y), (x - 1, y)]
+
+        found_secret_wall = False
+        for adj_pos in adjacent_positions:
+            if adj_pos in dungeon.rooms:
+                adj_room = dungeon.rooms[adj_pos]
+                if adj_room.secret_walls:
+                    found_secret_wall = True
+                    break
+
+        assert found_secret_wall, f"Secret room at {secret_pos} has no adjacent secret wall"
+
+
+def test_secret_rooms_not_on_main_path():
+    """Verify secret rooms are not on main path."""
+    dungeon = generate_dungeon(15)
+
+    for secret_pos in dungeon.secret_rooms:
+        assert secret_pos not in dungeon.main_path
