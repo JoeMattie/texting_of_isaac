@@ -163,6 +163,28 @@ def generate_dungeon(target_size: int = 15) -> Dungeon:
         dungeon.main_path.append(next_pos)
         current_pos = next_pos
 
+    # Step 3: Add special room branches (4-6 rooms)
+    special_rooms_added = 0
+    max_special = random.randint(4, 6)
+
+    # Add 2-3 treasure rooms
+    for _ in range(random.randint(2, 3)):
+        if special_rooms_added >= max_special:
+            break
+        branch_pos = _add_branch_room(dungeon, RoomType.TREASURE)
+        if branch_pos:
+            dungeon.treasure_rooms.append(branch_pos)
+            special_rooms_added += 1
+
+    # Add 1-2 shops
+    for _ in range(random.randint(1, 2)):
+        if special_rooms_added >= max_special:
+            break
+        branch_pos = _add_branch_room(dungeon, RoomType.SHOP)
+        if branch_pos:
+            dungeon.shop_rooms.append(branch_pos)
+            special_rooms_added += 1
+
     return dungeon
 
 
@@ -218,3 +240,50 @@ def _generate_enemy_config(room_type: RoomType) -> list[dict]:
         return [{"type": miniboss_type, "count": 1}]
     else:
         return []
+
+
+def _add_branch_room(dungeon: Dungeon, room_type: RoomType) -> tuple[int, int] | None:
+    """Add a branch room off the main path.
+
+    Args:
+        dungeon: Dungeon being generated
+        room_type: Type of room to add
+
+    Returns:
+        Position of new room, or None if couldn't place
+    """
+    # Select random room on main path as branch point (not too close to boss)
+    eligible_rooms = dungeon.main_path[:-3]
+    if not eligible_rooms:
+        return None
+
+    branch_point = random.choice(eligible_rooms)
+
+    # Find available adjacent position
+    x, y = branch_point
+    candidates = [
+        (x, y + 1), (x, y - 1), (x + 1, y), (x - 1, y)
+    ]
+
+    available = [pos for pos in candidates if pos not in dungeon.rooms]
+    if not available:
+        return None
+
+    new_pos = random.choice(available)
+
+    # Create room
+    room = DungeonRoom(
+        position=new_pos,
+        room_type=room_type,
+        doors={},
+        enemies=_generate_enemy_config(room_type) if room_type == RoomType.COMBAT else []
+    )
+    dungeon.rooms[new_pos] = room
+
+    # Create door connection
+    direction = get_direction(branch_point, new_pos)
+    opposite = get_opposite_direction(direction)
+    dungeon.rooms[branch_point].doors[direction] = new_pos
+    dungeon.rooms[new_pos].doors[opposite] = branch_point
+
+    return new_pos

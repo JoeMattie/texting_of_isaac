@@ -6,9 +6,11 @@ from src.game.dungeon import generate_dungeon, RoomType
 def test_dungeon_generates_main_path():
     """Verify dungeon has main path with 10-12 rooms."""
     dungeon = generate_dungeon(15)
-    assert 10 <= len(dungeon.rooms) <= 12
-    # Main path is the only thing generated in Task 5
-    # Tasks 6-7 will add special rooms to reach 12-18 total
+    # Main path should be 10-12 rooms
+    assert 10 <= len(dungeon.main_path) <= 12
+    # Total rooms includes special branches (added in Task 6-7)
+    # Should be 12-18 total rooms
+    assert 12 <= len(dungeon.rooms) <= 18
 
 
 def test_dungeon_has_start_position():
@@ -56,3 +58,38 @@ def test_main_path_is_connected():
 
         # Current room should have door to next room
         assert next_pos in current_room.doors.values()
+
+
+def test_dungeon_has_treasure_rooms():
+    """Verify dungeon has 2-3 treasure rooms."""
+    dungeon = generate_dungeon(15)
+    assert 2 <= len(dungeon.treasure_rooms) <= 3
+
+    for treasure_pos in dungeon.treasure_rooms:
+        assert dungeon.rooms[treasure_pos].room_type == RoomType.TREASURE
+
+
+def test_dungeon_has_shop_rooms():
+    """Verify dungeon has 1-2 shop rooms."""
+    dungeon = generate_dungeon(15)
+    assert 1 <= len(dungeon.shop_rooms) <= 2
+
+    for shop_pos in dungeon.shop_rooms:
+        assert dungeon.rooms[shop_pos].room_type == RoomType.SHOP
+
+
+def test_special_rooms_connected_to_main_path():
+    """Verify special rooms are branches off main path."""
+    dungeon = generate_dungeon(15)
+
+    all_special = dungeon.treasure_rooms + dungeon.shop_rooms
+
+    for special_pos in all_special:
+        special_room = dungeon.rooms[special_pos]
+
+        # Should have exactly 1 door (back to main path)
+        assert len(special_room.doors) == 1
+
+        # The connected room should be on main path
+        connected_pos = list(special_room.doors.values())[0]
+        assert connected_pos in dungeon.main_path
