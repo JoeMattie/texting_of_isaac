@@ -1012,3 +1012,88 @@ def test_collision_system_without_room_manager():
     # Should not crash when processing without room_manager
     collision_system.process()
     # If we get here without exception, test passes
+
+
+def test_reposition_player_after_transition_from_north():
+    """Test player repositioning when entering from north (spawn at south)."""
+    from src.components.core import Position
+    from src.components.game import Player
+    from src.config import Config
+
+    collision_system = CollisionSystem()
+
+    # Create player
+    player = esper.create_entity()
+    esper.add_component(player, Player())
+    player_pos = Position(10, 10)
+    esper.add_component(player, player_pos)
+
+    # Reposition player after entering from north
+    collision_system._reposition_player_after_transition(player, player_pos, "north")
+
+    # Should be at south wall, slightly inward
+    assert player_pos.y == Config.ROOM_HEIGHT - 2
+    assert player_pos.x == Config.ROOM_WIDTH / 2
+
+
+def test_reposition_player_after_transition_from_south():
+    """Test player repositioning when entering from south (spawn at north)."""
+    from src.components.core import Position
+    from src.components.game import Player
+    from src.config import Config
+
+    collision_system = CollisionSystem()
+
+    player = esper.create_entity()
+    esper.add_component(player, Player())
+    player_pos = Position(10, 10)
+    esper.add_component(player, player_pos)
+
+    # Reposition player after entering from south
+    collision_system._reposition_player_after_transition(player, player_pos, "south")
+
+    # Should be at north wall, slightly inward
+    assert player_pos.y == 1
+    assert player_pos.x == Config.ROOM_WIDTH / 2
+
+
+def test_reposition_player_after_transition_from_east():
+    """Test player repositioning when entering from east (spawn at west)."""
+    from src.components.core import Position
+    from src.components.game import Player
+    from src.config import Config
+
+    collision_system = CollisionSystem()
+
+    player = esper.create_entity()
+    esper.add_component(player, Player())
+    player_pos = Position(10, 10)
+    esper.add_component(player, player_pos)
+
+    # Reposition player after entering from east
+    collision_system._reposition_player_after_transition(player, player_pos, "east")
+
+    # Should be at west wall, slightly inward
+    assert player_pos.x == 1
+    assert player_pos.y == Config.ROOM_HEIGHT / 2
+
+
+def test_reposition_player_after_transition_from_west():
+    """Test player repositioning when entering from west (spawn at east)."""
+    from src.components.core import Position
+    from src.components.game import Player
+    from src.config import Config
+
+    collision_system = CollisionSystem()
+
+    player = esper.create_entity()
+    esper.add_component(player, Player())
+    player_pos = Position(10, 10)
+    esper.add_component(player, player_pos)
+
+    # Reposition player after entering from west
+    collision_system._reposition_player_after_transition(player, player_pos, "west")
+
+    # Should be at east wall, slightly inward
+    assert player_pos.x == Config.ROOM_WIDTH - 2
+    assert player_pos.y == Config.ROOM_HEIGHT / 2

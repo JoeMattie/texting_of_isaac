@@ -43,6 +43,10 @@ class CollisionSystem(esper.Processor):
                     if not door.locked and self._check_collision(player_ent, door_ent, esper.current_world):
                         # Trigger room transition via RoomManager
                         self.room_manager.transition_to_room(door.leads_to, door.direction)
+
+                        # Reposition player at entrance of new room
+                        self._reposition_player_after_transition(player_ent, player_pos, door.direction)
+
                         transition_triggered = True
 
                         # Only transition through one door per frame
@@ -201,3 +205,33 @@ class CollisionSystem(esper.Processor):
         # Check for death
         if health.current <= 0:
             esper.add_component(player, Dead())
+
+    def _reposition_player_after_transition(self, player_ent: int, player_pos: Position, entry_direction: str) -> None:
+        """Move player to entrance position in new room.
+
+        When entering through a door, position player on opposite side of new room,
+        slightly offset from the wall to avoid immediate re-collision.
+
+        Args:
+            player_ent: Player entity ID
+            player_pos: Player's Position component
+            entry_direction: Direction player came from
+        """
+        from src.config import Config
+
+        if entry_direction == "north":
+            # Entered from north, spawn at south
+            player_pos.y = Config.ROOM_HEIGHT - 2
+            player_pos.x = Config.ROOM_WIDTH / 2
+        elif entry_direction == "south":
+            # Entered from south, spawn at north
+            player_pos.y = 1
+            player_pos.x = Config.ROOM_WIDTH / 2
+        elif entry_direction == "east":
+            # Entered from east, spawn at west
+            player_pos.x = 1
+            player_pos.y = Config.ROOM_HEIGHT / 2
+        elif entry_direction == "west":
+            # Entered from west, spawn at east
+            player_pos.x = Config.ROOM_WIDTH - 2
+            player_pos.y = Config.ROOM_HEIGHT / 2
