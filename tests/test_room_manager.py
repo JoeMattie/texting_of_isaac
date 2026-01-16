@@ -3,6 +3,7 @@ import pytest
 import esper
 from src.systems.room_manager import RoomManager
 from src.game.dungeon import Dungeon, DungeonRoom, RoomType, RoomState
+from src.components.dungeon import Door
 
 
 def test_room_manager_initializes_with_dungeon():
@@ -343,8 +344,6 @@ def test_spawn_room_clear_reward_method_exists():
 
 def test_spawn_room_contents_spawns_doors_for_connections():
     """Test spawn_room_contents spawns doors for each connection."""
-    from src.components.dungeon import Door
-
     dungeon = Dungeon()
     room = DungeonRoom(
         position=(0, 0),
@@ -378,8 +377,6 @@ def test_spawn_room_contents_spawns_doors_for_connections():
 
 def test_spawn_room_contents_locks_doors_in_uncleared_combat_room():
     """Test spawn_room_contents locks doors in uncleared combat room."""
-    from src.components.dungeon import Door
-
     dungeon = Dungeon()
     room = DungeonRoom(
         position=(0, 0),
@@ -410,8 +407,6 @@ def test_spawn_room_contents_locks_doors_in_uncleared_combat_room():
 
 def test_spawn_room_contents_unlocks_doors_in_peaceful_room():
     """Test spawn_room_contents unlocks doors in peaceful room."""
-    from src.components.dungeon import Door
-
     dungeon = Dungeon()
     room = DungeonRoom(
         position=(0, 0),
@@ -440,8 +435,6 @@ def test_spawn_room_contents_unlocks_doors_in_peaceful_room():
 
 def test_spawn_room_contents_unlocks_doors_in_cleared_room():
     """Test spawn_room_contents unlocks doors in cleared room."""
-    from src.components.dungeon import Door
-
     dungeon = Dungeon()
     room = DungeonRoom(
         position=(0, 0),
@@ -472,8 +465,6 @@ def test_spawn_room_contents_unlocks_doors_in_cleared_room():
 
 def test_despawn_current_room_entities_removes_doors():
     """Test despawn_current_room_entities removes all Door entities."""
-    from src.components.dungeon import Door
-
     dungeon = Dungeon()
     room = DungeonRoom(
         position=(0, 0),

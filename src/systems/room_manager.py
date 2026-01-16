@@ -3,6 +3,7 @@ import esper
 from src.game.dungeon import Dungeon, DungeonRoom, RoomType, RoomState
 from src.entities.rewards import spawn_room_clear_reward as _spawn_room_clear_reward
 from src.entities.doors import spawn_door
+from src.components.dungeon import Door
 
 
 class RoomManager(esper.Processor):
@@ -32,8 +33,6 @@ class RoomManager(esper.Processor):
         This method will despawn enemies, projectiles, doors, and other
         room-specific entities when transitioning to a new room.
         """
-        from src.components.dungeon import Door
-
         # Delete all door entities
         for entity, (door,) in esper.get_components(Door):
             esper.delete_entity(entity, immediate=True)
