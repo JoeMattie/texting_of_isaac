@@ -3,11 +3,21 @@ import esper
 import math
 from src.components.core import Position, Health, Velocity
 from src.components.combat import Collider, Projectile
+from src.components.dungeon import Door
 from src.components.game import Enemy, Player
 
 
 class CollisionSystem(esper.Processor):
     """Handles collision detection and damage."""
+
+    def __init__(self, room_manager=None):
+        """Initialize collision system.
+
+        Args:
+            room_manager: RoomManager instance for room transitions (optional)
+        """
+        super().__init__()
+        self.room_manager = room_manager
 
     def process(self):
         """Check all collisions and apply damage."""
@@ -23,6 +33,26 @@ class CollisionSystem(esper.Processor):
                 # Pass the current world name
                 if self._check_collision(e1, e2, esper.current_world):
                     self._handle_collision(e1, e2)
+
+        # Player-door collision for room transitions (only if room_manager available)
+        if self.room_manager:
+            transition_triggered = False
+            for player_ent, (player, player_pos, player_collider) in esper.get_components(Player, Position, Collider):
+                for door_ent, (door, door_pos, door_collider) in esper.get_components(Door, Position, Collider):
+                    # Only unlocked doors allow transitions
+                    if not door.locked and self._check_collision(player_ent, door_ent, esper.current_world):
+                        # Trigger room transition via RoomManager
+                        self.room_manager.transition_to_room(door.leads_to, door.direction)
+
+                        # Reposition player at entrance of new room
+                        self._reposition_player_after_transition(player_ent, player_pos, door.direction)
+
+                        transition_triggered = True
+
+                        # Only transition through one door per frame
+                        break
+                if transition_triggered:
+                    break
 
     def _check_collision(self, e1: int, e2: int, world_name: str) -> bool:
         """Check if two entities collide.
@@ -175,3 +205,33 @@ class CollisionSystem(esper.Processor):
         # Check for death
         if health.current <= 0:
             esper.add_component(player, Dead())
+
+    def _reposition_player_after_transition(self, player_ent: int, player_pos: Position, entry_direction: str) -> None:
+        """Move player to entrance position in new room.
+
+        When entering through a door, position player on opposite side of new room,
+        slightly offset from the wall to avoid immediate re-collision.
+
+        Args:
+            player_ent: Player entity ID
+            player_pos: Player's Position component
+            entry_direction: Direction player came from
+        """
+        from src.config import Config
+
+        if entry_direction == "north":
+            # Entered from north, spawn at south
+            player_pos.y = Config.ROOM_HEIGHT - 2
+            player_pos.x = Config.ROOM_WIDTH / 2
+        elif entry_direction == "south":
+            # Entered from south, spawn at north
+            player_pos.y = 1
+            player_pos.x = Config.ROOM_WIDTH / 2
+        elif entry_direction == "east":
+            # Entered from east, spawn at west
+            player_pos.x = 1
+            player_pos.y = Config.ROOM_HEIGHT / 2
+        elif entry_direction == "west":
+            # Entered from west, spawn at east
+            player_pos.x = Config.ROOM_WIDTH - 2
+            player_pos.y = Config.ROOM_HEIGHT / 2

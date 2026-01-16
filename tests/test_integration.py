@@ -314,3 +314,146 @@ def test_multi_shot_creates_spread():
     # Verify 3 projectiles created
     projectiles = list(esper.get_components(Projectile))
     assert len(projectiles) == 3
+
+
+def test_full_room_transition():
+    """Test complete room transition flow from start to finish."""
+    # Import dependencies
+    from src.game.dungeon import Dungeon, DungeonRoom, RoomType
+    from src.systems.room_manager import RoomManager
+    from src.systems.collision import CollisionSystem
+    from src.components.dungeon import Door
+    from src.config import Config
+
+    # Set up clean world
+    esper.switch_world("test_room_transition")
+    esper.clear_database()
+
+    # Create dungeon with two connected rooms
+    dungeon = Dungeon()
+    room1_pos = (0, 0)
+    room2_pos = (0, -1)
+
+    dungeon.rooms[room1_pos] = DungeonRoom(
+        position=room1_pos,
+        room_type=RoomType.START,
+        doors={"north": room2_pos},
+        cleared=True
+    )
+    dungeon.rooms[room2_pos] = DungeonRoom(
+        position=room2_pos,
+        room_type=RoomType.COMBAT,
+        doors={"south": room1_pos},
+        cleared=False
+    )
+    dungeon.start_position = room1_pos
+
+    # Create room manager and collision system
+    room_manager = RoomManager(dungeon)
+    collision_system = CollisionSystem(room_manager)
+    esper.add_processor(collision_system)
+
+    # Spawn starting room contents (door to north)
+    room_manager.spawn_room_contents()
+
+    # Verify one door exists in room 1
+    doors_before = list(esper.get_components(Door))
+    assert len(doors_before) == 1
+    door_ent_before, (door_before,) = doors_before[0]
+    assert door_before.direction == "north"
+    assert door_before.leads_to == room2_pos
+    assert door_before.locked is False  # Start room door should be unlocked
+
+    # Create player at north door position
+    door_pos = esper.component_for_entity(door_ent_before, Position)
+    # Note: create_player will switch worlds, but we need to be in the same world as the door
+    # The door was spawned in "main" by spawn_room_contents, so we create player there too
+    player = create_player("main", door_pos.x, door_pos.y)
+
+    # Verify player is in room 1
+    assert room_manager.current_position == room1_pos
+
+    # Process collision (this should trigger room transition)
+    collision_system.process()
+
+    # Verify room transition occurred
+    assert room_manager.current_position == room2_pos
+    assert room_manager.current_room == dungeon.rooms[room2_pos]
+
+    # Verify old door was despawned
+    doors_after = list(esper.get_components(Door))
+    assert len(doors_after) == 1  # New door in room 2
+    door_ent_after, (door_after,) = doors_after[0]
+    assert door_ent_after != door_ent_before  # Different door entity
+    assert door_after.direction == "south"  # Door back to room 1
+    assert door_after.leads_to == room1_pos
+
+    # Verify player was repositioned to south side of room 2
+    player_pos = esper.component_for_entity(player, Position)
+    assert player_pos.y == Config.ROOM_HEIGHT - 2  # Near south wall
+    assert player_pos.x == Config.ROOM_WIDTH / 2   # Centered horizontally
+
+
+def test_combat_room_door_unlock_on_clear():
+    """Test doors unlock when combat room is cleared."""
+    from src.game.dungeon import Dungeon, DungeonRoom, RoomType, RoomState
+    from src.systems.room_manager import RoomManager
+    from src.components.dungeon import Door
+    from src.components.core import Sprite
+    from src.config import Config
+
+    # Set up clean world
+    # Note: Using "main" world since spawn_door hardcodes "main" world
+    esper.switch_world("main")
+    esper.clear_database()
+
+    # Create dungeon with combat room
+    dungeon = Dungeon()
+    room_pos = (0, 0)
+    next_room_pos = (0, -1)
+
+    dungeon.rooms[room_pos] = DungeonRoom(
+        position=room_pos,
+        room_type=RoomType.COMBAT,
+        doors={"north": next_room_pos},
+        cleared=False  # Uncleared combat room
+    )
+    dungeon.rooms[next_room_pos] = DungeonRoom(
+        position=next_room_pos,
+        room_type=RoomType.COMBAT,
+        doors={"south": room_pos},
+        cleared=False
+    )
+    dungeon.start_position = room_pos
+
+    # Create room manager
+    room_manager = RoomManager(dungeon)
+
+    # Spawn room contents
+    room_manager.spawn_room_contents()
+
+    # Verify door is locked (combat room not cleared)
+    doors = list(esper.get_components(Door, Sprite))
+    assert len(doors) == 1
+    door_ent, (door, sprite) = doors[0]
+    assert door.locked is True
+    assert sprite.char == "▮"
+    assert sprite.color == "red"
+
+    # Spawn an enemy
+    enemy = create_enemy("main", "chaser", Config.ROOM_WIDTH / 2, Config.ROOM_HEIGHT / 2)
+
+    # Kill the enemy (set health to 0 and delete)
+    esper.delete_entity(enemy, immediate=True)
+
+    # Call on_room_cleared (this would normally be called by combat system)
+    room_manager.on_room_cleared()
+
+    # Verify door is now unlocked
+    assert door.locked is False
+    assert sprite.char == "▯"
+    assert sprite.color == "cyan"
+
+    # Verify room state
+    assert room_manager.current_room.cleared is True
+    assert room_manager.current_room.state == RoomState.CLEARED

@@ -2,6 +2,9 @@
 import esper
 from src.game.dungeon import Dungeon, DungeonRoom, RoomType, RoomState
 from src.entities.rewards import spawn_room_clear_reward as _spawn_room_clear_reward
+from src.entities.doors import spawn_door
+from src.components.dungeon import Door
+from src.components.core import Sprite
 
 
 class RoomManager(esper.Processor):
@@ -30,32 +33,46 @@ class RoomManager(esper.Processor):
 
         This method will despawn enemies, projectiles, doors, and other
         room-specific entities when transitioning to a new room.
-
-        Implementation will be added when entity systems are integrated.
         """
-        # TODO: Implement entity despawning in integration tasks
-        # Will need to:
+        # Delete all door entities
+        for entity, (door,) in esper.get_components(Door):
+            esper.delete_entity(entity, immediate=True)
+
+        # TODO: Implement additional entity despawning in integration tasks
         # - Delete all enemies (esper.get_components(Enemy))
         # - Delete all projectiles (esper.get_components(Projectile))
-        # - Delete all doors (esper.get_components(Door))
         # - Keep player entity
-        pass
 
     def spawn_room_contents(self) -> None:
         """Spawn entities for current room.
 
         This method spawns all entities that should exist in the current
         room based on room type, cleared status, and door connections.
-
-        Implementation will be added when entity systems are integrated.
         """
-        # TODO: Implement entity spawning in integration tasks
-        # Will need to:
-        # - Spawn doors for each connection
+        # Determine if doors should be locked
+        should_lock = self._should_lock_doors()
+
+        # Spawn doors for each connection
+        for direction, leads_to in self.current_room.doors.items():
+            spawn_door("main", direction, leads_to, locked=should_lock)
+
+        # TODO: Implement additional entity spawning in integration tasks
         # - Spawn enemies if not cleared
         # - Spawn shop items if shop room
         # - Spawn treasure pedestal if treasure room
-        pass
+
+    def _should_lock_doors(self) -> bool:
+        """Determine if doors should be locked based on room state.
+
+        Returns:
+            True if doors should be locked, False otherwise
+        """
+        # Lock doors in uncleared combat rooms
+        if self.current_room.room_type == RoomType.COMBAT and not self.current_room.cleared:
+            return True
+
+        # Unlock doors in all other cases (peaceful rooms, cleared rooms)
+        return False
 
     def transition_to_room(self, new_position: tuple[int, int], entry_direction: str) -> None:
         """Transition player to new room.
@@ -108,22 +125,18 @@ class RoomManager(esper.Processor):
         self.spawn_room_clear_reward()
 
     def lock_all_doors(self) -> None:
-        """Lock all doors in current room.
-
-        Implementation will be added when door entities are integrated.
-        """
-        # TODO: Implement door locking in door system integration
-        # Will need to iterate over Door entities and set locked=True
-        pass
+        """Lock all doors in current room."""
+        for door_ent, (door, sprite) in esper.get_components(Door, Sprite):
+            door.locked = True
+            sprite.char = "▮"
+            sprite.color = "red"
 
     def unlock_all_doors(self) -> None:
-        """Unlock all doors in current room.
-
-        Implementation will be added when door entities are integrated.
-        """
-        # TODO: Implement door unlocking in door system integration
-        # Will need to iterate over Door entities and set locked=False
-        pass
+        """Unlock all doors in current room."""
+        for door_ent, (door, sprite) in esper.get_components(Door, Sprite):
+            door.locked = False
+            sprite.char = "▯"
+            sprite.color = "cyan"
 
     def spawn_room_clear_reward(self) -> None:
         """Spawn reward when room is cleared.
