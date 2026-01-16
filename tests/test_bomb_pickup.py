@@ -101,3 +101,18 @@ def test_bomb_pickup_validates_positive_quantity():
 
     with pytest.raises(ValueError, match="quantity must be positive"):
         BombPickup(quantity=-1)
+
+
+def test_bomb_pickup_shows_notification():
+    """Test bomb pickup shows notification message."""
+    esper.clear_database()
+
+    player = create_player("test", 20.0, 20.0)
+    bomb = spawn_bomb_pickup("test", 20.2, 20.2, quantity=2)
+
+    pickup_system = ItemPickupSystem()
+    pickup_system.process()
+
+    # Should show notification
+    assert pickup_system.notification == "+2 bombs"
+    assert pickup_system.notification_timer > 0

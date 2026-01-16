@@ -47,6 +47,9 @@ class ItemPickupSystem(esper.Processor):
                     # Pick up coin
                     currency.coins += coin.value
                     esper.delete_entity(coin_ent)
+                    # Show notification
+                    self.notification = f"+{coin.value} coin{'s' if coin.value != 1 else ''}"
+                    self.notification_timer = Config.NOTIFICATION_DURATION
 
         # Bomb pickup
         for player_ent, (player, player_pos, currency) in esper.get_components(Player, Position, Currency):
@@ -58,6 +61,9 @@ class ItemPickupSystem(esper.Processor):
                     # Pick up bomb
                     currency.bombs += bomb_pickup.quantity
                     esper.delete_entity(bomb_ent)
+                    # Show notification
+                    self.notification = f"+{bomb_pickup.quantity} bomb{'s' if bomb_pickup.quantity != 1 else ''}"
+                    self.notification_timer = Config.NOTIFICATION_DURATION
 
     def _check_overlap(self, pos1: Position, col1: Collider, pos2: Position, col2: Collider) -> bool:
         """Check if two circles overlap.

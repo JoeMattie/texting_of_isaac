@@ -101,3 +101,18 @@ def test_coin_validates_positive_value():
 
     with pytest.raises(ValueError, match="value must be positive"):
         Coin(value=-1)
+
+
+def test_coin_pickup_shows_notification():
+    """Test coin pickup shows notification message."""
+    esper.clear_database()
+
+    player = create_player("test", 20.0, 20.0)
+    coin = spawn_coin("test", 20.2, 20.2, value=5)
+
+    pickup_system = ItemPickupSystem()
+    pickup_system.process()
+
+    # Should show notification
+    assert pickup_system.notification == "+5 coins"
+    assert pickup_system.notification_timer > 0
