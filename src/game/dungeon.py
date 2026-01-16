@@ -48,3 +48,49 @@ class Dungeon:
     treasure_rooms: list[tuple[int, int]] = field(default_factory=list)
     shop_rooms: list[tuple[int, int]] = field(default_factory=list)
     secret_rooms: list[tuple[int, int]] = field(default_factory=list)
+
+
+def get_direction(from_pos: tuple[int, int], to_pos: tuple[int, int]) -> str:
+    """Get direction from one position to adjacent position.
+
+    Args:
+        from_pos: Starting position (x, y)
+        to_pos: Target position (x, y)
+
+    Returns:
+        Direction string: "north", "south", "east", or "west"
+
+    Raises:
+        ValueError: If positions are not adjacent
+    """
+    fx, fy = from_pos
+    tx, ty = to_pos
+
+    if tx == fx and ty == fy - 1:
+        return "north"
+    elif tx == fx and ty == fy + 1:
+        return "south"
+    elif tx == fx + 1 and ty == fy:
+        return "east"
+    elif tx == fx - 1 and ty == fy:
+        return "west"
+    else:
+        raise ValueError(f"Positions not adjacent: {from_pos} -> {to_pos}")
+
+
+def get_opposite_direction(direction: str) -> str:
+    """Get opposite direction.
+
+    Args:
+        direction: Direction string
+
+    Returns:
+        Opposite direction
+    """
+    opposites = {
+        "north": "south",
+        "south": "north",
+        "east": "west",
+        "west": "east"
+    }
+    return opposites[direction]
