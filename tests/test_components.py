@@ -445,3 +445,14 @@ def test_status_effect_validates():
     effect = StatusEffect(effect_type="spelunker_sense", duration=30.0)
     assert effect.effect_type == "spelunker_sense"
     assert effect.duration == 30.0
+
+
+def test_minimap_get_display_bounds_returns_correct_range():
+    """Test get_display_bounds returns ±3 from current position."""
+    minimap = MiniMap(current_position=(5, 10), visible_rooms=set())
+    min_x, min_y, max_x, max_y = minimap.get_display_bounds()
+
+    assert min_x == 2  # 5 - 3
+    assert min_y == 7  # 10 - 3
+    assert max_x == 8  # 5 + 3
+    assert max_y == 13  # 10 + 3

@@ -81,6 +81,16 @@ class MiniMap:
         """Mark room as visited."""
         self.visible_rooms.add((x, y))
 
+    def get_display_bounds(self) -> tuple[int, int, int, int]:
+        """Get min/max coordinates for display (±3 from current).
+
+        Returns:
+            (min_x, min_y, max_x, max_y) - Display boundary coordinates
+        """
+        cx, cy = self.current_position
+        radius = 3
+        return (cx - radius, cy - radius, cx + radius, cy + radius)
+
 
 @dataclass
 class StatusEffect:
