@@ -97,3 +97,9 @@ def test_spawn_door_component_values():
     assert door.direction == "south"
     assert door.leads_to == (5, 3)
     assert door.locked == False
+
+
+def test_spawn_door_invalid_direction():
+    """Test that invalid direction raises ValueError."""
+    with pytest.raises(ValueError, match="Invalid direction"):
+        spawn_door("test", "northwest", (0, 0))
