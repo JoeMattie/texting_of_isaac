@@ -113,11 +113,20 @@ class CollisionSystem(esper.Processor):
 
         # Check for enemy death
         if health.current <= 0:
+            pos = esper.component_for_entity(enemy, Position)
+
             # Roll for item drop
             if random.random() < Config.ITEM_DROP_CHANCE:
-                pos = esper.component_for_entity(enemy, Position)
                 from src.entities.items import spawn_random_item
                 spawn_random_item(esper._current_world, pos.x, pos.y)
+
+            # Roll for coin drop (independent of item drop)
+            if random.random() < 0.15:
+                # 15% chance to drop 1-2 coins
+                num_coins = random.randint(1, 2)
+                from src.entities.currency import spawn_coin
+                for _ in range(num_coins):
+                    spawn_coin(esper._current_world, pos.x, pos.y)
 
             esper.delete_entity(enemy)
 

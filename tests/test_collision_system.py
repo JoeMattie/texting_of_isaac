@@ -630,3 +630,230 @@ def test_no_drop_without_luck():
 
     finally:
         random.random = original_random
+
+
+def test_enemy_drops_coins_on_death():
+    """Test enemies drop coins 15% of the time when killed."""
+    import random
+    from src.entities.player import create_player
+    from src.components.currency import Coin
+
+    world_name = "test_world"
+    esper.switch_world(world_name)
+    esper.clear_database()
+
+    # Seed random for predictable test
+    random.seed(123)
+
+    # Create player
+    player = create_player(world_name, 10.0, 10.0)
+
+    # Create many enemies to ensure at least some coin drops
+    # With 15% drop rate, 30 enemies should give ~4-5 coin drops
+    from src.entities.enemies import create_enemy
+    enemies = []
+    for i in range(30):
+        enemy = create_enemy(world_name, "chaser", 20.0 + i * 2.0, 10.0)
+        enemies.append(enemy)
+
+    # Create collision system once
+    collision_system = CollisionSystem()
+    esper.add_processor(collision_system)
+
+    # Kill all enemies with projectiles
+    for i, enemy in enumerate(enemies):
+        proj = esper.create_entity()
+        esper.add_component(proj, Position(20.0 + i * 2.0, 10.0))
+        from src.components.core import Velocity
+        esper.add_component(proj, Velocity(10.0, 0.0))
+        esper.add_component(proj, Collider(0.5))
+        esper.add_component(proj, Projectile(100.0, player))  # High damage to kill
+        esper.process()
+
+    # Count dropped coins
+    coin_count = len(list(esper.get_components(Coin)))
+
+    # Should have at least 1 coin drop from 30 enemies
+    assert coin_count > 0
+
+
+def test_coin_drops_at_enemy_position():
+    """Test dropped coins spawn at enemy death position."""
+    import random
+    from src.entities.player import create_player
+    from src.components.currency import Coin
+
+    world_name = "test_world"
+    esper.switch_world(world_name)
+    esper.clear_database()
+
+    # Force a coin drop by manipulating random
+    original_random = random.random
+    random.random = lambda: 0.0  # Always drop coins
+
+    try:
+        # Create player
+        player = create_player(world_name, 10.0, 10.0)
+
+        # Create enemy at specific position
+        from src.entities.enemies import create_enemy
+        enemy = create_enemy(world_name, "chaser", 25.0, 30.0)
+
+        # Kill enemy
+        proj = esper.create_entity()
+        esper.add_component(proj, Position(25.0, 30.0))
+        from src.components.core import Velocity
+        esper.add_component(proj, Velocity(10.0, 0.0))
+        esper.add_component(proj, Collider(0.1))
+        esper.add_component(proj, Projectile(100.0, player))
+
+        collision_system = CollisionSystem()
+        esper.add_processor(collision_system)
+        esper.process()
+
+        # Find dropped coins
+        coins_found = 0
+        for _, (coin, pos) in esper.get_components(Coin, Position):
+            # Coins should be at enemy's death position
+            assert abs(pos.x - 25.0) < 0.1
+            assert abs(pos.y - 30.0) < 0.1
+            coins_found += 1
+
+        # Should have dropped at least 1 coin
+        assert coins_found >= 1
+
+    finally:
+        random.random = original_random
+
+
+def test_coin_drops_1_to_2_coins():
+    """Test enemies drop 1-2 coins when coin drop occurs."""
+    import random
+    from src.entities.player import create_player
+    from src.components.currency import Coin
+
+    world_name = "test_world"
+    esper.switch_world(world_name)
+    esper.clear_database()
+
+    # Force coin drop and control randint
+    original_random = random.random
+    original_randint = random.randint
+    random.random = lambda: 0.0  # Always drop coins
+    random.randint = lambda a, b: 2  # Always drop 2 coins
+
+    try:
+        # Create player
+        player = create_player(world_name, 10.0, 10.0)
+
+        # Create and kill enemy
+        from src.entities.enemies import create_enemy
+        enemy = create_enemy(world_name, "chaser", 15.0, 10.0)
+
+        proj = esper.create_entity()
+        esper.add_component(proj, Position(15.0, 10.0))
+        from src.components.core import Velocity
+        esper.add_component(proj, Velocity(10.0, 0.0))
+        esper.add_component(proj, Collider(0.1))
+        esper.add_component(proj, Projectile(100.0, player))
+
+        collision_system = CollisionSystem()
+        esper.add_processor(collision_system)
+        esper.process()
+
+        # Should have 2 coins
+        coin_count = len(list(esper.get_components(Coin)))
+        assert coin_count == 2
+
+    finally:
+        random.random = original_random
+        random.randint = original_randint
+
+
+def test_no_coin_drop_without_luck():
+    """Test enemies don't always drop coins (respects 15% chance)."""
+    import random
+    from src.entities.player import create_player
+    from src.components.currency import Coin
+
+    world_name = "test_world"
+    esper.switch_world(world_name)
+    esper.clear_database()
+
+    # Force no coin drops
+    original_random = random.random
+    random.random = lambda: 0.99  # Never drop coins (>15%)
+
+    try:
+        # Create player
+        player = create_player(world_name, 10.0, 10.0)
+
+        # Create and kill enemy
+        from src.entities.enemies import create_enemy
+        enemy = create_enemy(world_name, "chaser", 15.0, 10.0)
+
+        proj = esper.create_entity()
+        esper.add_component(proj, Position(15.0, 10.0))
+        from src.components.core import Velocity
+        esper.add_component(proj, Velocity(10.0, 0.0))
+        esper.add_component(proj, Collider(0.1))
+        esper.add_component(proj, Projectile(100.0, player))
+
+        collision_system = CollisionSystem()
+        esper.add_processor(collision_system)
+        esper.process()
+
+        # Should be no coins
+        coin_count = len(list(esper.get_components(Coin)))
+        assert coin_count == 0
+
+    finally:
+        random.random = original_random
+
+
+def test_coin_and_item_drops_independent():
+    """Test coin drops are independent from item drops (both can happen)."""
+    import random
+    from src.entities.player import create_player
+    from src.components.currency import Coin
+    from src.components.game import Item
+
+    world_name = "test_world"
+    esper.switch_world(world_name)
+    esper.clear_database()
+
+    # Force both coin and item drops
+    original_random = random.random
+    original_randint = random.randint
+    random.random = lambda: 0.0  # Always drop both
+    random.randint = lambda a, b: 1  # Drop 1 coin
+
+    try:
+        # Create player
+        player = create_player(world_name, 10.0, 10.0)
+
+        # Create and kill enemy
+        from src.entities.enemies import create_enemy
+        enemy = create_enemy(world_name, "chaser", 15.0, 10.0)
+
+        proj = esper.create_entity()
+        esper.add_component(proj, Position(15.0, 10.0))
+        from src.components.core import Velocity
+        esper.add_component(proj, Velocity(10.0, 0.0))
+        esper.add_component(proj, Collider(0.1))
+        esper.add_component(proj, Projectile(100.0, player))
+
+        collision_system = CollisionSystem()
+        esper.add_processor(collision_system)
+        esper.process()
+
+        # Should have both coins and items
+        coin_count = len(list(esper.get_components(Coin)))
+        item_count = len(list(esper.get_components(Item)))
+
+        assert coin_count >= 1, "Should have coin drops"
+        assert item_count >= 1, "Should have item drops"
+
+    finally:
+        random.random = original_random
+        random.randint = original_randint
