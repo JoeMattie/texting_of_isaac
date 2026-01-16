@@ -45,3 +45,151 @@ def test_current_room_tracks_position():
     manager.current_room = dungeon.rooms[(1, 0)]
 
     assert manager.current_room == room2
+
+
+def test_transition_to_room_updates_position():
+    """Test transitioning to a new room updates position."""
+    dungeon = Dungeon()
+    room1 = DungeonRoom(
+        position=(0, 0),
+        room_type=RoomType.START,
+        doors={"east": (1, 0)},
+        state=RoomState.PEACEFUL
+    )
+    room2 = DungeonRoom(
+        position=(1, 0),
+        room_type=RoomType.COMBAT,
+        doors={"west": (0, 0)},
+        state=RoomState.UNVISITED,
+        enemies=[{"type": "chaser", "count": 1}]
+    )
+
+    dungeon.rooms[(0, 0)] = room1
+    dungeon.rooms[(1, 0)] = room2
+    dungeon.start_position = (0, 0)
+
+    manager = RoomManager(dungeon)
+
+    # Transition to room2
+    manager.transition_to_room((1, 0), "east")
+
+    assert manager.current_position == (1, 0)
+    assert manager.current_room == room2
+
+
+def test_transition_marks_room_as_visited():
+    """Test transitioning marks the new room as visited."""
+    dungeon = Dungeon()
+    room1 = DungeonRoom(
+        position=(0, 0),
+        room_type=RoomType.START,
+        doors={"east": (1, 0)},
+        state=RoomState.PEACEFUL
+    )
+    room2 = DungeonRoom(
+        position=(1, 0),
+        room_type=RoomType.COMBAT,
+        doors={"west": (0, 0)},
+        state=RoomState.UNVISITED,
+        visited=False,
+        enemies=[{"type": "chaser", "count": 1}]
+    )
+
+    dungeon.rooms[(0, 0)] = room1
+    dungeon.rooms[(1, 0)] = room2
+    dungeon.start_position = (0, 0)
+
+    manager = RoomManager(dungeon)
+
+    assert room2.visited == False
+
+    manager.transition_to_room((1, 0), "east")
+
+    assert room2.visited == True
+
+
+def test_transition_sets_combat_state_for_uncleared_room():
+    """Test transitioning to uncleared combat room sets COMBAT state."""
+    dungeon = Dungeon()
+    room1 = DungeonRoom(
+        position=(0, 0),
+        room_type=RoomType.START,
+        doors={"east": (1, 0)},
+        state=RoomState.PEACEFUL
+    )
+    room2 = DungeonRoom(
+        position=(1, 0),
+        room_type=RoomType.COMBAT,
+        doors={"west": (0, 0)},
+        state=RoomState.UNVISITED,
+        cleared=False,
+        enemies=[{"type": "chaser", "count": 1}]
+    )
+
+    dungeon.rooms[(0, 0)] = room1
+    dungeon.rooms[(1, 0)] = room2
+    dungeon.start_position = (0, 0)
+
+    manager = RoomManager(dungeon)
+
+    manager.transition_to_room((1, 0), "east")
+
+    assert room2.state == RoomState.COMBAT
+
+
+def test_transition_sets_peaceful_state_for_treasure_room():
+    """Test transitioning to treasure room sets PEACEFUL state."""
+    dungeon = Dungeon()
+    room1 = DungeonRoom(
+        position=(0, 0),
+        room_type=RoomType.START,
+        doors={"north": (0, 1)},
+        state=RoomState.PEACEFUL
+    )
+    room2 = DungeonRoom(
+        position=(0, 1),
+        room_type=RoomType.TREASURE,
+        doors={"south": (0, 0)},
+        state=RoomState.UNVISITED,
+        enemies=[]
+    )
+
+    dungeon.rooms[(0, 0)] = room1
+    dungeon.rooms[(0, 1)] = room2
+    dungeon.start_position = (0, 0)
+
+    manager = RoomManager(dungeon)
+
+    manager.transition_to_room((0, 1), "north")
+
+    assert room2.state == RoomState.PEACEFUL
+
+
+def test_transition_to_cleared_room_sets_cleared_state():
+    """Test revisiting cleared room keeps CLEARED state."""
+    dungeon = Dungeon()
+    room1 = DungeonRoom(
+        position=(0, 0),
+        room_type=RoomType.START,
+        doors={"east": (1, 0)},
+        state=RoomState.PEACEFUL
+    )
+    room2 = DungeonRoom(
+        position=(1, 0),
+        room_type=RoomType.COMBAT,
+        doors={"west": (0, 0)},
+        state=RoomState.UNVISITED,
+        cleared=True,  # Already cleared
+        enemies=[{"type": "chaser", "count": 1}]
+    )
+
+    dungeon.rooms[(0, 0)] = room1
+    dungeon.rooms[(1, 0)] = room2
+    dungeon.start_position = (0, 0)
+
+    manager = RoomManager(dungeon)
+
+    manager.transition_to_room((1, 0), "east")
+
+    # Should be CLEARED, not COMBAT, even though enemies config exists
+    assert room2.state == RoomState.CLEARED
