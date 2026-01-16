@@ -321,3 +321,21 @@ def test_unlock_all_doors_method_exists():
 
     # Should not raise AttributeError
     manager.unlock_all_doors()
+
+
+def test_spawn_room_clear_reward_method_exists():
+    """Test spawn_room_clear_reward method exists."""
+    dungeon = Dungeon()
+    room = DungeonRoom(
+        position=(0, 0),
+        room_type=RoomType.START,
+        doors={"east": (1, 0)},
+        state=RoomState.PEACEFUL
+    )
+    dungeon.rooms[(0, 0)] = room
+    dungeon.start_position = (0, 0)
+
+    manager = RoomManager(dungeon)
+
+    # Should not raise AttributeError
+    manager.spawn_room_clear_reward()
