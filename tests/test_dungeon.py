@@ -86,3 +86,9 @@ def test_get_opposite_direction():
     assert get_opposite_direction("south") == "north"
     assert get_opposite_direction("east") == "west"
     assert get_opposite_direction("west") == "east"
+
+
+def test_get_opposite_direction_invalid_raises():
+    """Test error on invalid direction."""
+    with pytest.raises(ValueError, match="Invalid direction"):
+        get_opposite_direction("invalid")

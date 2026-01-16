@@ -82,10 +82,13 @@ def get_opposite_direction(direction: str) -> str:
     """Get opposite direction.
 
     Args:
-        direction: Direction string
+        direction: Direction string ("north", "south", "east", or "west")
 
     Returns:
         Opposite direction
+
+    Raises:
+        ValueError: If direction is not valid
     """
     opposites = {
         "north": "south",
@@ -93,4 +96,6 @@ def get_opposite_direction(direction: str) -> str:
         "east": "west",
         "west": "east"
     }
+    if direction not in opposites:
+        raise ValueError(f"Invalid direction: {direction}. Must be one of: north, south, east, west")
     return opposites[direction]
