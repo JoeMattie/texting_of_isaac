@@ -193,3 +193,70 @@ def test_transition_to_cleared_room_sets_cleared_state():
 
     # Should be CLEARED, not COMBAT, even though enemies config exists
     assert room2.state == RoomState.CLEARED
+
+
+def test_despawn_current_room_entities_method_exists():
+    """Test despawn_current_room_entities method exists."""
+    dungeon = Dungeon()
+    room = DungeonRoom(
+        position=(0, 0),
+        room_type=RoomType.START,
+        doors={},
+        state=RoomState.PEACEFUL
+    )
+    dungeon.rooms[(0, 0)] = room
+    dungeon.start_position = (0, 0)
+
+    manager = RoomManager(dungeon)
+
+    # Should not raise AttributeError
+    manager.despawn_current_room_entities()
+
+
+def test_spawn_room_contents_method_exists():
+    """Test spawn_room_contents method exists."""
+    dungeon = Dungeon()
+    room = DungeonRoom(
+        position=(0, 0),
+        room_type=RoomType.START,
+        doors={"east": (1, 0)},
+        state=RoomState.PEACEFUL
+    )
+    dungeon.rooms[(0, 0)] = room
+    dungeon.start_position = (0, 0)
+
+    manager = RoomManager(dungeon)
+
+    # Should not raise AttributeError
+    manager.spawn_room_contents()
+
+
+def test_transition_calls_despawn_and_spawn():
+    """Test transition_to_room despawns old room and spawns new room."""
+    # This test verifies the integration, actual entity logic comes later
+    dungeon = Dungeon()
+    room1 = DungeonRoom(
+        position=(0, 0),
+        room_type=RoomType.START,
+        doors={"east": (1, 0)},
+        state=RoomState.PEACEFUL
+    )
+    room2 = DungeonRoom(
+        position=(1, 0),
+        room_type=RoomType.COMBAT,
+        doors={"west": (0, 0)},
+        state=RoomState.UNVISITED,
+        enemies=[{"type": "chaser", "count": 1}]
+    )
+
+    dungeon.rooms[(0, 0)] = room1
+    dungeon.rooms[(1, 0)] = room2
+    dungeon.start_position = (0, 0)
+
+    manager = RoomManager(dungeon)
+
+    # Transition should call despawn and spawn internally
+    # For now just verify no errors
+    manager.transition_to_room((1, 0), "east")
+
+    assert manager.current_position == (1, 0)
