@@ -566,3 +566,86 @@ def test_unlock_all_doors_unlocks_doors():
     assert door.locked is False
     assert sprite.char == "▯"
     assert sprite.color == "cyan"
+
+
+def test_room_manager_reveals_room_on_transition():
+    """Test RoomManager reveals room in minimap on transition."""
+    from src.components.dungeon import MiniMap
+
+    # Create dungeon with two connected rooms
+    rooms = {
+        (0, 0): DungeonRoom(position=(0, 0), room_type=RoomType.START, doors={"east": (1, 0)}),
+        (1, 0): DungeonRoom(position=(1, 0), room_type=RoomType.COMBAT, doors={"west": (0, 0)}),
+    }
+    dungeon = Dungeon(rooms=rooms, start_position=(0, 0), main_path=[(0, 0), (1, 0)])
+
+    # Switch to main world for esper operations
+    esper.switch_world("main")
+
+    # Create minimap entity
+    minimap_ent = esper.create_entity()
+    minimap = MiniMap(current_position=(0, 0), visible_rooms=set())
+    esper.add_component(minimap_ent, minimap)
+
+    # Initial room should not be revealed yet
+    assert (0, 0) not in minimap.visible_rooms
+
+    # Create room manager
+    room_manager = RoomManager(dungeon)
+
+    # Transition to (1, 0)
+    room_manager.transition_to_room((1, 0), "east")
+
+    # Both rooms should now be revealed
+    assert (0, 0) in minimap.visible_rooms
+    assert (1, 0) in minimap.visible_rooms
+
+
+def test_room_manager_reveals_start_room_on_init():
+    """Test RoomManager reveals start room when initialized."""
+    from src.components.dungeon import MiniMap
+
+    rooms = {
+        (0, 0): DungeonRoom(position=(0, 0), room_type=RoomType.START, doors={}),
+    }
+    dungeon = Dungeon(rooms=rooms, start_position=(0, 0), main_path=[(0, 0)])
+
+    # Switch to main world for esper operations
+    esper.switch_world("main")
+
+    # Create minimap entity
+    minimap_ent = esper.create_entity()
+    minimap = MiniMap(current_position=(0, 0), visible_rooms=set())
+    esper.add_component(minimap_ent, minimap)
+
+    # Create room manager
+    room_manager = RoomManager(dungeon)
+
+    # Start room should be revealed
+    assert (0, 0) in minimap.visible_rooms
+
+
+def test_room_manager_updates_minimap_current_position():
+    """Test RoomManager updates minimap current_position on transition."""
+    from src.components.dungeon import MiniMap
+
+    rooms = {
+        (0, 0): DungeonRoom(position=(0, 0), room_type=RoomType.START, doors={"east": (1, 0)}),
+        (1, 0): DungeonRoom(position=(1, 0), room_type=RoomType.COMBAT, doors={"west": (0, 0)}),
+    }
+    dungeon = Dungeon(rooms=rooms, start_position=(0, 0), main_path=[(0, 0), (1, 0)])
+
+    # Switch to main world for esper operations
+    esper.switch_world("main")
+
+    minimap_ent = esper.create_entity()
+    minimap = MiniMap(current_position=(0, 0), visible_rooms=set())
+    esper.add_component(minimap_ent, minimap)
+
+    room_manager = RoomManager(dungeon)
+
+    # Transition to (1, 0)
+    room_manager.transition_to_room((1, 0), "east")
+
+    # Minimap current_position should update
+    assert minimap.current_position == (1, 0)

@@ -28,6 +28,9 @@ class RoomManager(esper.Processor):
         self.current_position = dungeon.start_position
         self.current_room = dungeon.rooms[self.current_position]
 
+        # Reveal start room in minimap
+        self._reveal_current_room()
+
     def despawn_current_room_entities(self) -> None:
         """Remove all entities from current room.
 
@@ -108,6 +111,9 @@ class RoomManager(esper.Processor):
             # Entering uncleared combat room
             self.current_room.state = RoomState.COMBAT
 
+        # Reveal room in minimap
+        self._reveal_current_room()
+
     def on_room_cleared(self) -> None:
         """Called when last enemy in room dies.
 
@@ -148,6 +154,21 @@ class RoomManager(esper.Processor):
         # Note: We need to determine which world to spawn in
         # For now, use "main" world as default
         _spawn_room_clear_reward("main")
+
+    def _reveal_current_room(self) -> None:
+        """Reveal current room in minimap."""
+        from src.components.dungeon import MiniMap
+
+        # Find minimap entity
+        minimap_entities = esper.get_component(MiniMap)
+        if minimap_entities:
+            minimap_ent, minimap = minimap_entities[0]
+
+            # Reveal current room
+            minimap.reveal_room(self.current_position[0], self.current_position[1])
+
+            # Update current position
+            minimap.current_position = self.current_position
 
     def process(self):
         """Process room manager (currently no per-frame logic)."""
