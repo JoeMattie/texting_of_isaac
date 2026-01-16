@@ -31,6 +31,7 @@ class Config:
     # Item system
     ITEM_DROP_CHANCE: float = 0.15  # 15% chance for enemy to drop item
     ITEM_PICKUP_RADIUS: float = 0.4  # Collision radius for item pickups
+    DOOR_COLLIDER_RADIUS: float = 1.0  # Door collision detection radius
 
     # Homing effect
     HOMING_TURN_RATE: float = 120.0  # Degrees per second (2 degrees per frame at 60fps)
