@@ -314,3 +314,82 @@ def test_multi_shot_creates_spread():
     # Verify 3 projectiles created
     projectiles = list(esper.get_components(Projectile))
     assert len(projectiles) == 3
+
+
+def test_full_room_transition():
+    """Test complete room transition flow from start to finish."""
+    # Import dependencies
+    from src.game.dungeon import Dungeon, DungeonRoom, RoomType
+    from src.systems.room_manager import RoomManager
+    from src.systems.collision import CollisionSystem
+    from src.components.dungeon import Door
+    from src.config import Config
+
+    # Set up clean world
+    esper.switch_world("test_room_transition")
+    esper.clear_database()
+
+    # Create dungeon with two connected rooms
+    dungeon = Dungeon()
+    room1_pos = (0, 0)
+    room2_pos = (0, -1)
+
+    dungeon.rooms[room1_pos] = DungeonRoom(
+        position=room1_pos,
+        room_type=RoomType.START,
+        doors={"north": room2_pos},
+        cleared=True
+    )
+    dungeon.rooms[room2_pos] = DungeonRoom(
+        position=room2_pos,
+        room_type=RoomType.COMBAT,
+        doors={"south": room1_pos},
+        cleared=False
+    )
+    dungeon.start_position = room1_pos
+
+    # Create room manager and collision system
+    room_manager = RoomManager(dungeon)
+    collision_system = CollisionSystem(room_manager)
+    esper.add_processor(collision_system)
+
+    # Spawn starting room contents (door to north)
+    room_manager.spawn_room_contents()
+
+    # Verify one door exists in room 1
+    doors_before = list(esper.get_components(Door))
+    assert len(doors_before) == 1
+    door_ent_before, (door_before,) = doors_before[0]
+    assert door_before.direction == "north"
+    assert door_before.leads_to == room2_pos
+    assert door_before.locked is False  # Start room door should be unlocked
+
+    # Create player at north door position
+    door_pos = esper.component_for_entity(door_ent_before, Position)
+    player = esper.create_entity()
+    esper.add_component(player, Player())
+    esper.add_component(player, Position(door_pos.x, door_pos.y))
+    esper.add_component(player, Collider(0.5))
+
+    # Verify player is in room 1
+    assert room_manager.current_position == room1_pos
+
+    # Process collision (this should trigger room transition)
+    collision_system.process()
+
+    # Verify room transition occurred
+    assert room_manager.current_position == room2_pos
+    assert room_manager.current_room == dungeon.rooms[room2_pos]
+
+    # Verify old door was despawned
+    doors_after = list(esper.get_components(Door))
+    assert len(doors_after) == 1  # New door in room 2
+    door_ent_after, (door_after,) = doors_after[0]
+    assert door_ent_after != door_ent_before  # Different door entity
+    assert door_after.direction == "south"  # Door back to room 1
+    assert door_after.leads_to == room1_pos
+
+    # Verify player was repositioned to south side of room 2
+    player_pos = esper.component_for_entity(player, Position)
+    assert player_pos.y == Config.ROOM_HEIGHT - 2  # Near south wall
+    assert player_pos.x == Config.ROOM_WIDTH / 2   # Centered horizontally
