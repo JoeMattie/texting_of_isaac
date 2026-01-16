@@ -3,7 +3,6 @@ import random
 from enum import Enum
 from dataclasses import dataclass, field
 from typing import Optional
-from src.config import Config
 
 
 class RoomType(Enum):
@@ -137,7 +136,7 @@ def generate_dungeon(target_size: int = 15) -> Dungeon:
         next_pos = _choose_next_position(current_pos, dungeon.rooms)
 
         # Determine room type
-        if i == int(main_path_length * 0.4):
+        if i == int((main_path_length - 1) * 0.4):
             room_type = RoomType.MINIBOSS
             dungeon.miniboss_position = next_pos
         elif i == main_path_length - 2:
@@ -151,7 +150,7 @@ def generate_dungeon(target_size: int = 15) -> Dungeon:
             position=next_pos,
             room_type=room_type,
             doors={},
-            enemies=_generate_enemy_config(room_type) if room_type == RoomType.COMBAT else []
+            enemies=_generate_enemy_config(room_type) if room_type in [RoomType.COMBAT, RoomType.MINIBOSS] else []
         )
         dungeon.rooms[next_pos] = room
 
@@ -167,7 +166,7 @@ def generate_dungeon(target_size: int = 15) -> Dungeon:
     return dungeon
 
 
-def _choose_next_position(current: tuple[int, int], existing_rooms: dict) -> tuple[int, int]:
+def _choose_next_position(current: tuple[int, int], existing_rooms: dict[tuple[int, int], DungeonRoom]) -> tuple[int, int]:
     """Choose next position for main path.
 
     Args:
@@ -178,7 +177,7 @@ def _choose_next_position(current: tuple[int, int], existing_rooms: dict) -> tup
         Next position for path
 
     Raises:
-        Exception: If no available positions
+        RuntimeError: If no available positions
     """
     x, y = current
     directions = [
@@ -192,7 +191,7 @@ def _choose_next_position(current: tuple[int, int], existing_rooms: dict) -> tup
     available = [pos for pos in directions if pos not in existing_rooms]
 
     if not available:
-        raise Exception("No available positions - dungeon generation stuck")
+        raise RuntimeError("No available positions - dungeon generation stuck")
 
     return random.choice(available)
 
