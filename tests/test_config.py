@@ -106,6 +106,26 @@ def test_no_constants_are_none():
     assert Config.INVINCIBILITY_DURATION is not None
     assert Config.HEART_DROP_CHANCE is not None
     assert Config.MAX_PROJECTILES is not None
+    assert Config.DUNGEON_MIN_SIZE is not None
+    assert Config.DUNGEON_MAX_SIZE is not None
+    assert Config.DUNGEON_MAIN_PATH_LENGTH is not None
+    assert Config.TREASURE_ROOM_COUNT_MIN is not None
+    assert Config.TREASURE_ROOM_COUNT_MAX is not None
+    assert Config.SHOP_COUNT_MIN is not None
+    assert Config.SHOP_COUNT_MAX is not None
+    assert Config.SECRET_COUNT_MIN is not None
+    assert Config.SECRET_COUNT_MAX is not None
+    assert Config.REWARD_COINS_CHANCE is not None
+    assert Config.REWARD_HEART_CHANCE is not None
+    assert Config.REWARD_STAT_BOOST_CHANCE is not None
+    assert Config.REWARD_BOMBS_CHANCE is not None
+    assert Config.STARTING_BOMBS is not None
+    assert Config.STARTING_COINS is not None
+    assert Config.ENEMY_COIN_DROP_CHANCE is not None
+    assert Config.BOMB_FUSE_TIME is not None
+    assert Config.BOMB_BLAST_RADIUS is not None
+    assert Config.BOMB_DAMAGE is not None
+    assert Config.MINIMAP_DISPLAY_RADIUS is not None
 
 
 def test_integer_constants_are_integers():
@@ -115,6 +135,18 @@ def test_integer_constants_are_integers():
     assert isinstance(Config.FPS, int)
     assert isinstance(Config.PLAYER_MAX_HP, int)
     assert isinstance(Config.MAX_PROJECTILES, int)
+    assert isinstance(Config.DUNGEON_MIN_SIZE, int)
+    assert isinstance(Config.DUNGEON_MAX_SIZE, int)
+    assert isinstance(Config.DUNGEON_MAIN_PATH_LENGTH, int)
+    assert isinstance(Config.TREASURE_ROOM_COUNT_MIN, int)
+    assert isinstance(Config.TREASURE_ROOM_COUNT_MAX, int)
+    assert isinstance(Config.SHOP_COUNT_MIN, int)
+    assert isinstance(Config.SHOP_COUNT_MAX, int)
+    assert isinstance(Config.SECRET_COUNT_MIN, int)
+    assert isinstance(Config.SECRET_COUNT_MAX, int)
+    assert isinstance(Config.STARTING_BOMBS, int)
+    assert isinstance(Config.STARTING_COINS, int)
+    assert isinstance(Config.MINIMAP_DISPLAY_RADIUS, int)
 
 
 def test_float_constants_are_numeric():
@@ -128,6 +160,14 @@ def test_float_constants_are_numeric():
     assert isinstance(Config.PROJECTILE_HITBOX, (int, float))
     assert isinstance(Config.INVINCIBILITY_DURATION, (int, float))
     assert isinstance(Config.HEART_DROP_CHANCE, (int, float))
+    assert isinstance(Config.REWARD_COINS_CHANCE, (int, float))
+    assert isinstance(Config.REWARD_HEART_CHANCE, (int, float))
+    assert isinstance(Config.REWARD_STAT_BOOST_CHANCE, (int, float))
+    assert isinstance(Config.REWARD_BOMBS_CHANCE, (int, float))
+    assert isinstance(Config.ENEMY_COIN_DROP_CHANCE, (int, float))
+    assert isinstance(Config.BOMB_FUSE_TIME, (int, float))
+    assert isinstance(Config.BOMB_BLAST_RADIUS, (int, float))
+    assert isinstance(Config.BOMB_DAMAGE, (int, float))
 
 
 def test_item_drop_chance_is_probability():
@@ -210,3 +250,37 @@ def test_reward_chances_sum_to_one():
         Config.REWARD_BOMBS_CHANCE
     )
     assert abs(total - 1.0) < 0.001  # Float comparison tolerance
+
+
+def test_room_count_min_max_constraints():
+    """Verify room count min < max for all room types."""
+    assert Config.TREASURE_ROOM_COUNT_MIN < Config.TREASURE_ROOM_COUNT_MAX
+    assert Config.SHOP_COUNT_MIN < Config.SHOP_COUNT_MAX
+    assert Config.SECRET_COUNT_MIN < Config.SECRET_COUNT_MAX
+
+
+def test_reward_probabilities_are_valid():
+    """Verify all reward probabilities are between 0 and 1."""
+    assert 0 <= Config.REWARD_COINS_CHANCE <= 1
+    assert 0 <= Config.REWARD_HEART_CHANCE <= 1
+    assert 0 <= Config.REWARD_STAT_BOOST_CHANCE <= 1
+    assert 0 <= Config.REWARD_BOMBS_CHANCE <= 1
+
+
+def test_currency_constants_are_non_negative():
+    """Verify currency starting values are non-negative."""
+    assert Config.STARTING_BOMBS >= 0
+    assert Config.STARTING_COINS >= 0
+    assert 0 <= Config.ENEMY_COIN_DROP_CHANCE <= 1
+
+
+def test_bomb_constants_are_positive():
+    """Verify bomb constants are positive values."""
+    assert Config.BOMB_FUSE_TIME > 0
+    assert Config.BOMB_BLAST_RADIUS > 0
+    assert Config.BOMB_DAMAGE > 0
+
+
+def test_minimap_radius_is_positive():
+    """Verify minimap radius is positive."""
+    assert Config.MINIMAP_DISPLAY_RADIUS > 0
