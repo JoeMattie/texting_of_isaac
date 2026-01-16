@@ -457,3 +457,75 @@ def test_combat_room_door_unlock_on_clear():
     # Verify room state
     assert room_manager.current_room.cleared is True
     assert room_manager.current_room.state == RoomState.CLEARED
+
+
+def test_full_minimap_navigation():
+    """Test complete minimap flow: reveal rooms, navigate, update display."""
+    esper.switch_world("main")
+    esper.clear_database()
+
+    from src.components.dungeon import MiniMap
+    from src.game.dungeon import Dungeon, DungeonRoom, RoomType
+    from src.systems.room_manager import RoomManager
+    from src.systems.minimap_system import MiniMapSystem
+    from src.systems.render import RenderSystem
+    from src.config import Config
+
+    # Create dungeon with 3 connected rooms
+    rooms = {
+        (0, 0): DungeonRoom(position=(0, 0), room_type=RoomType.START, doors={"east": (1, 0)}),
+        (1, 0): DungeonRoom(position=(1, 0), room_type=RoomType.COMBAT, doors={"west": (0, 0), "south": (1, 1)}),
+        (1, 1): DungeonRoom(position=(1, 1), room_type=RoomType.TREASURE, doors={"north": (1, 0)}),
+    }
+    dungeon = Dungeon(rooms=rooms, start_position=(0, 0), main_path=[(0, 0), (1, 0), (1, 1)])
+
+    # Create minimap entity
+    minimap_ent = esper.create_entity()
+    minimap = MiniMap(current_position=(0, 0), visible_rooms=set())
+    esper.add_component(minimap_ent, minimap)
+
+    # Create systems
+    room_manager = RoomManager(dungeon)
+    minimap_system = MiniMapSystem()
+    render_system = RenderSystem(minimap_system=minimap_system, dungeon=dungeon)
+
+    # Step 1: Start room revealed
+    assert (0, 0) in minimap.visible_rooms
+    assert minimap.current_position == (0, 0)
+
+    # Render minimap
+    minimap_display = minimap_system.render(minimap, dungeon)
+    center_line = minimap_display[4]  # Center row
+    assert "◆" in center_line  # Current room at (0, 0)
+    assert "□" in center_line  # Adjacent room at (1, 0) should show
+
+    # Step 2: Transition to (1, 0)
+    room_manager.transition_to_room((1, 0), "east")
+
+    # Minimap should be updated in place
+    assert (1, 0) in minimap.visible_rooms
+    assert minimap.current_position == (1, 0)
+
+    # Render minimap again
+    minimap_display = minimap_system.render(minimap, dungeon)
+    center_line = minimap_display[4]
+    assert "◆" in center_line  # Current room at (1, 0)
+    assert "■" in center_line  # Visited room at (0, 0)
+
+    # All rooms should be visible
+    all_chars = ''.join(minimap_display)
+    assert all_chars.count("■") >= 1  # At least 1 visited room
+    assert "◆" in all_chars  # Current room
+
+    # Step 3: Verify render system integration
+    grid = render_system.render("main")
+
+    # Minimap should appear in top-right corner
+    top_right_has_border = False
+    for row in grid[:10]:  # Check top 10 rows
+        for cell in row[-20:]:  # Check rightmost 20 columns
+            if cell['char'] in '╔═╗║╚╝':
+                top_right_has_border = True
+                break
+
+    assert top_right_has_border, "Minimap border should appear in top-right corner"
