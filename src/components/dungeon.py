@@ -65,6 +65,10 @@ class MiniBoss:
             raise ValueError("boss_type cannot be empty")
         if self.boss_type not in valid_boss_types:
             raise ValueError("boss_type must be one of: glutton, hoarder, sentinel")
+        if not self.guaranteed_drop:
+            raise ValueError("guaranteed_drop cannot be empty")
+        if self.teleport_timer <= 0:
+            raise ValueError("teleport_timer must be positive")
 
 
 @dataclass

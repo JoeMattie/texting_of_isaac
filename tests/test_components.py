@@ -413,6 +413,20 @@ def test_miniboss_validates_boss_type():
     assert sentinel.boss_type == "sentinel"
 
 
+def test_miniboss_validates_guaranteed_drop():
+    """Test MiniBoss validates guaranteed_drop is not empty."""
+    with pytest.raises(ValueError, match="guaranteed_drop cannot be empty"):
+        MiniBoss(boss_type="glutton", guaranteed_drop="")
+
+
+def test_miniboss_validates_teleport_timer():
+    """Test MiniBoss validates teleport_timer is positive."""
+    with pytest.raises(ValueError, match="teleport_timer must be positive"):
+        MiniBoss(boss_type="sentinel", guaranteed_drop="coins", teleport_timer=0)
+    with pytest.raises(ValueError, match="teleport_timer must be positive"):
+        MiniBoss(boss_type="sentinel", guaranteed_drop="coins", teleport_timer=-1.0)
+
+
 def test_status_effect_validates():
     """Test StatusEffect validates effect_type and duration."""
     # Test empty effect_type
