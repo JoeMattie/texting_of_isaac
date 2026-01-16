@@ -121,8 +121,8 @@ class CollisionSystem(esper.Processor):
                 spawn_random_item(esper._current_world, pos.x, pos.y)
 
             # Roll for coin drop (independent of item drop)
-            if random.random() < 0.15:
-                # 15% chance to drop 1-2 coins
+            if random.random() < Config.ENEMY_COIN_DROP_CHANCE:
+                # Drop 1-2 coins
                 num_coins = random.randint(1, 2)
                 from src.entities.currency import spawn_coin
                 for _ in range(num_coins):
