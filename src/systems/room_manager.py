@@ -124,22 +124,24 @@ class RoomManager(esper.Processor):
         self.spawn_room_clear_reward()
 
     def lock_all_doors(self) -> None:
-        """Lock all doors in current room.
+        """Lock all doors in current room."""
+        from src.components.dungeon import Door
+        from src.components.core import Sprite
 
-        Implementation will be added when door entities are integrated.
-        """
-        # TODO: Implement door locking in door system integration
-        # Will need to iterate over Door entities and set locked=True
-        pass
+        for door_ent, (door, sprite) in esper.get_components(Door, Sprite):
+            door.locked = True
+            sprite.char = "▮"
+            sprite.color = "red"
 
     def unlock_all_doors(self) -> None:
-        """Unlock all doors in current room.
+        """Unlock all doors in current room."""
+        from src.components.dungeon import Door
+        from src.components.core import Sprite
 
-        Implementation will be added when door entities are integrated.
-        """
-        # TODO: Implement door unlocking in door system integration
-        # Will need to iterate over Door entities and set locked=False
-        pass
+        for door_ent, (door, sprite) in esper.get_components(Door, Sprite):
+            door.locked = False
+            sprite.char = "▯"
+            sprite.color = "cyan"
 
     def spawn_room_clear_reward(self) -> None:
         """Spawn reward when room is cleared.

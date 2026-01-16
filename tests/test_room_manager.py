@@ -491,3 +491,78 @@ def test_despawn_current_room_entities_removes_doors():
     # Verify all doors removed
     doors_after = list(esper.get_components(Door))
     assert len(doors_after) == 0
+
+
+def test_lock_all_doors_locks_doors():
+    """Test locking all doors."""
+    from src.components.dungeon import Door
+    from src.components.core import Position, Sprite
+
+    # Create dungeon with connected rooms
+    dungeon = Dungeon()
+    start_pos = (0, 0)
+    dungeon.rooms[start_pos] = DungeonRoom(
+        position=start_pos,
+        room_type=RoomType.START,
+        doors={"north": (0, -1)},
+        cleared=True
+    )
+    dungeon.start_position = start_pos
+
+    manager = RoomManager(dungeon)
+
+    # Spawn unlocked door
+    from src.entities.doors import spawn_door
+    door_ent = spawn_door("main", "north", (0, -1), locked=False)
+
+    # Verify door starts unlocked
+    door = esper.component_for_entity(door_ent, Door)
+    sprite = esper.component_for_entity(door_ent, Sprite)
+    assert door.locked is False
+    assert sprite.char == "▯"
+    assert sprite.color == "cyan"
+
+    # Lock all doors
+    manager.lock_all_doors()
+
+    # Verify door is now locked
+    assert door.locked is True
+    assert sprite.char == "▮"
+    assert sprite.color == "red"
+
+def test_unlock_all_doors_unlocks_doors():
+    """Test unlocking all doors."""
+    from src.components.dungeon import Door
+    from src.components.core import Position, Sprite
+
+    # Create dungeon with connected rooms
+    dungeon = Dungeon()
+    start_pos = (0, 0)
+    dungeon.rooms[start_pos] = DungeonRoom(
+        position=start_pos,
+        room_type=RoomType.START,
+        doors={"north": (0, -1)},
+        cleared=True
+    )
+    dungeon.start_position = start_pos
+
+    manager = RoomManager(dungeon)
+
+    # Spawn locked door
+    from src.entities.doors import spawn_door
+    door_ent = spawn_door("main", "north", (0, -1), locked=True)
+
+    # Verify door starts locked
+    door = esper.component_for_entity(door_ent, Door)
+    sprite = esper.component_for_entity(door_ent, Sprite)
+    assert door.locked is True
+    assert sprite.char == "▮"
+    assert sprite.color == "red"
+
+    # Unlock all doors
+    manager.unlock_all_doors()
+
+    # Verify door is now unlocked
+    assert door.locked is False
+    assert sprite.char == "▯"
+    assert sprite.color == "cyan"
