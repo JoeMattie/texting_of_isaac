@@ -339,3 +339,132 @@ def test_spawn_room_clear_reward_method_exists():
 
     # Should not raise AttributeError
     manager.spawn_room_clear_reward()
+
+
+def test_spawn_room_contents_spawns_doors_for_connections():
+    """Test spawn_room_contents spawns doors for each connection."""
+    from src.components.dungeon import Door
+
+    dungeon = Dungeon()
+    room = DungeonRoom(
+        position=(0, 0),
+        room_type=RoomType.START,
+        doors={"north": (0, 1), "east": (1, 0)},
+        state=RoomState.PEACEFUL
+    )
+    dungeon.rooms[(0, 0)] = room
+    dungeon.start_position = (0, 0)
+
+    manager = RoomManager(dungeon)
+    esper.switch_world("main")
+
+    manager.spawn_room_contents()
+
+    # Get all door components
+    doors = list(esper.get_components(Door))
+
+    # Should have spawned 2 doors
+    assert len(doors) == 2
+
+    # Extract door data
+    door_data = {door_comp.direction: door_comp.leads_to for _, (door_comp,) in doors}
+
+    # Verify doors for each connection
+    assert "north" in door_data
+    assert door_data["north"] == (0, 1)
+    assert "east" in door_data
+    assert door_data["east"] == (1, 0)
+
+
+def test_spawn_room_contents_locks_doors_in_uncleared_combat_room():
+    """Test spawn_room_contents locks doors in uncleared combat room."""
+    from src.components.dungeon import Door
+
+    dungeon = Dungeon()
+    room = DungeonRoom(
+        position=(0, 0),
+        room_type=RoomType.COMBAT,
+        doors={"south": (0, -1)},
+        state=RoomState.COMBAT,
+        cleared=False,
+        enemies=[{"type": "chaser", "count": 1}]
+    )
+    dungeon.rooms[(0, 0)] = room
+    dungeon.start_position = (0, 0)
+
+    manager = RoomManager(dungeon)
+    esper.switch_world("main")
+
+    manager.spawn_room_contents()
+
+    # Get all door components
+    doors = list(esper.get_components(Door))
+
+    # Should have spawned 1 door
+    assert len(doors) == 1
+
+    # Verify door is locked
+    _, (door_component,) = doors[0]
+    assert door_component.locked == True
+
+
+def test_spawn_room_contents_unlocks_doors_in_peaceful_room():
+    """Test spawn_room_contents unlocks doors in peaceful room."""
+    from src.components.dungeon import Door
+
+    dungeon = Dungeon()
+    room = DungeonRoom(
+        position=(0, 0),
+        room_type=RoomType.TREASURE,
+        doors={"west": (-1, 0)},
+        state=RoomState.PEACEFUL
+    )
+    dungeon.rooms[(0, 0)] = room
+    dungeon.start_position = (0, 0)
+
+    manager = RoomManager(dungeon)
+    esper.switch_world("main")
+
+    manager.spawn_room_contents()
+
+    # Get all door components
+    doors = list(esper.get_components(Door))
+
+    # Should have spawned 1 door
+    assert len(doors) == 1
+
+    # Verify door is unlocked
+    _, (door_component,) = doors[0]
+    assert door_component.locked == False
+
+
+def test_spawn_room_contents_unlocks_doors_in_cleared_room():
+    """Test spawn_room_contents unlocks doors in cleared room."""
+    from src.components.dungeon import Door
+
+    dungeon = Dungeon()
+    room = DungeonRoom(
+        position=(0, 0),
+        room_type=RoomType.COMBAT,
+        doors={"east": (1, 0)},
+        state=RoomState.CLEARED,
+        cleared=True,
+        enemies=[{"type": "chaser", "count": 1}]
+    )
+    dungeon.rooms[(0, 0)] = room
+    dungeon.start_position = (0, 0)
+
+    manager = RoomManager(dungeon)
+    esper.switch_world("main")
+
+    manager.spawn_room_contents()
+
+    # Get all door components
+    doors = list(esper.get_components(Door))
+
+    # Should have spawned 1 door
+    assert len(doors) == 1
+
+    # Verify door is unlocked
+    _, (door_component,) = doors[0]
+    assert door_component.locked == False
