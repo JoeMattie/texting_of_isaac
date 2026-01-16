@@ -115,18 +115,26 @@ def test_secret_rooms_have_secret_walls():
         assert len(secret_room.doors) == 0
 
         # Find the adjacent room with the secret wall
-        x, y = secret_pos
-        adjacent_positions = [(x, y + 1), (x, y - 1), (x + 1, y), (x - 1, y)]
+        sx, sy = secret_pos
+        adjacent_positions = [(sx, sy + 1), (sx, sy - 1), (sx + 1, sy), (sx - 1, sy)]
 
-        found_secret_wall = False
+        found_marker = False
         for adj_pos in adjacent_positions:
             if adj_pos in dungeon.rooms:
                 adj_room = dungeon.rooms[adj_pos]
-                if adj_room.secret_walls:
-                    found_secret_wall = True
-                    break
+                for direction in adj_room.secret_walls:
+                    # Verify direction actually points to secret room
+                    ax, ay = adj_pos
+                    if direction == "north" and (ax, ay - 1) == secret_pos:
+                        found_marker = True
+                    elif direction == "south" and (ax, ay + 1) == secret_pos:
+                        found_marker = True
+                    elif direction == "east" and (ax + 1, ay) == secret_pos:
+                        found_marker = True
+                    elif direction == "west" and (ax - 1, ay) == secret_pos:
+                        found_marker = True
 
-        assert found_secret_wall, f"Secret room at {secret_pos} has no adjacent secret wall"
+        assert found_marker, f"Secret room at {secret_pos} not marked correctly with valid direction"
 
 
 def test_secret_rooms_not_on_main_path():
