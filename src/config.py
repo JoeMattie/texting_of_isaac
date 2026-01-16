@@ -37,3 +37,35 @@ class Config:
 
     # Notification display
     NOTIFICATION_DURATION: float = 2.0  # Seconds to display pickup notification
+
+    # Dungeon generation
+    DUNGEON_MIN_SIZE: int = 12
+    DUNGEON_MAX_SIZE: int = 18
+    DUNGEON_MAIN_PATH_LENGTH: int = 11
+
+    # Special room counts
+    TREASURE_ROOM_COUNT_MIN: int = 2
+    TREASURE_ROOM_COUNT_MAX: int = 3
+    SHOP_COUNT_MIN: int = 1
+    SHOP_COUNT_MAX: int = 2
+    SECRET_COUNT_MIN: int = 1
+    SECRET_COUNT_MAX: int = 2
+
+    # Room clear rewards (probabilities must sum to 1.0)
+    REWARD_COINS_CHANCE: float = 0.60
+    REWARD_HEART_CHANCE: float = 0.25
+    REWARD_STAT_BOOST_CHANCE: float = 0.10
+    REWARD_BOMBS_CHANCE: float = 0.05
+
+    # Currency
+    STARTING_BOMBS: int = 3
+    STARTING_COINS: int = 0
+    ENEMY_COIN_DROP_CHANCE: float = 0.15
+
+    # Bombs
+    BOMB_FUSE_TIME: float = 1.5
+    BOMB_BLAST_RADIUS: float = 2.0
+    BOMB_DAMAGE: float = 1.0
+
+    # Mini-map
+    MINIMAP_DISPLAY_RADIUS: int = 3

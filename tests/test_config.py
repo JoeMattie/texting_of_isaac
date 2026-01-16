@@ -152,3 +152,61 @@ def test_notification_duration_is_positive():
     """Test NOTIFICATION_DURATION is positive."""
     assert hasattr(Config, 'NOTIFICATION_DURATION')
     assert Config.NOTIFICATION_DURATION > 0
+
+
+def test_dungeon_generation_constants_exist():
+    """Verify dungeon generation constants defined."""
+    assert hasattr(Config, 'DUNGEON_MIN_SIZE')
+    assert hasattr(Config, 'DUNGEON_MAX_SIZE')
+    assert hasattr(Config, 'DUNGEON_MAIN_PATH_LENGTH')
+    assert hasattr(Config, 'TREASURE_ROOM_COUNT_MIN')
+    assert hasattr(Config, 'TREASURE_ROOM_COUNT_MAX')
+    assert hasattr(Config, 'SHOP_COUNT_MIN')
+    assert hasattr(Config, 'SHOP_COUNT_MAX')
+    assert hasattr(Config, 'SECRET_COUNT_MIN')
+    assert hasattr(Config, 'SECRET_COUNT_MAX')
+
+
+def test_reward_constants_exist():
+    """Verify reward system constants defined."""
+    assert hasattr(Config, 'REWARD_COINS_CHANCE')
+    assert hasattr(Config, 'REWARD_HEART_CHANCE')
+    assert hasattr(Config, 'REWARD_STAT_BOOST_CHANCE')
+    assert hasattr(Config, 'REWARD_BOMBS_CHANCE')
+
+
+def test_currency_constants_exist():
+    """Verify currency constants defined."""
+    assert hasattr(Config, 'STARTING_BOMBS')
+    assert hasattr(Config, 'STARTING_COINS')
+    assert hasattr(Config, 'ENEMY_COIN_DROP_CHANCE')
+
+
+def test_bomb_constants_exist():
+    """Verify bomb constants defined."""
+    assert hasattr(Config, 'BOMB_FUSE_TIME')
+    assert hasattr(Config, 'BOMB_BLAST_RADIUS')
+    assert hasattr(Config, 'BOMB_DAMAGE')
+
+
+def test_minimap_constants_exist():
+    """Verify mini-map constants defined."""
+    assert hasattr(Config, 'MINIMAP_DISPLAY_RADIUS')
+
+
+def test_dungeon_sizes_are_reasonable():
+    """Verify dungeon size constraints."""
+    assert 10 <= Config.DUNGEON_MIN_SIZE <= 15
+    assert 15 <= Config.DUNGEON_MAX_SIZE <= 20
+    assert Config.DUNGEON_MIN_SIZE < Config.DUNGEON_MAX_SIZE
+
+
+def test_reward_chances_sum_to_one():
+    """Verify reward probabilities sum to 1.0."""
+    total = (
+        Config.REWARD_COINS_CHANCE +
+        Config.REWARD_HEART_CHANCE +
+        Config.REWARD_STAT_BOOST_CHANCE +
+        Config.REWARD_BOMBS_CHANCE
+    )
+    assert abs(total - 1.0) < 0.001  # Float comparison tolerance
