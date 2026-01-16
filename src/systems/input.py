@@ -16,8 +16,9 @@ class InputSystem(esper.Processor):
         self.move_y = 0
         self.shoot_x = 0
         self.shoot_y = 0
+        self.bomb_pressed = False
 
-    def set_input(self, move_x: int, move_y: int, shoot_x: int, shoot_y: int):
+    def set_input(self, move_x: int, move_y: int, shoot_x: int, shoot_y: int, bomb_pressed: bool = False):
         """Set current input state.
 
         Args:
@@ -25,11 +26,13 @@ class InputSystem(esper.Processor):
             move_y: -1 (up), 0 (none), 1 (down)
             shoot_x: -1 (left), 0 (none), 1 (right)
             shoot_y: -1 (up), 0 (none), 1 (down)
+            bomb_pressed: True if bomb key ('e') is pressed, False otherwise
         """
         self.move_x = move_x
         self.move_y = move_y
         self.shoot_x = shoot_x
         self.shoot_y = shoot_y
+        self.bomb_pressed = bomb_pressed
 
     def process(self):
         """Update player velocity based on input."""
