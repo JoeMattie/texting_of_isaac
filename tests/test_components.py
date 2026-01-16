@@ -321,3 +321,113 @@ def test_status_effect_component():
     assert effect.effect_type == "spelunker_sense"
     assert effect.duration == 30.0
     assert effect.room_duration == False
+
+
+def test_currency_validates_positive_values():
+    """Test Currency validates non-negative values."""
+    # Test negative coins
+    with pytest.raises(ValueError, match="coins must be non-negative"):
+        Currency(coins=-1, bombs=3, keys=0)
+
+    # Test negative bombs
+    with pytest.raises(ValueError, match="bombs must be non-negative"):
+        Currency(coins=0, bombs=-1, keys=0)
+
+    # Test negative keys
+    with pytest.raises(ValueError, match="keys must be non-negative"):
+        Currency(coins=0, bombs=3, keys=-1)
+
+    # Zero values should be valid
+    currency = Currency(coins=0, bombs=0, keys=0)
+    assert currency.coins == 0
+    assert currency.bombs == 0
+    assert currency.keys == 0
+
+
+def test_door_validates_direction():
+    """Test Door validates direction."""
+    # Test invalid direction
+    with pytest.raises(ValueError, match="direction must be one of: north, south, east, west"):
+        Door(direction="northwest", leads_to=(0, 1))
+
+    with pytest.raises(ValueError, match="direction must be one of: north, south, east, west"):
+        Door(direction="invalid", leads_to=(0, 1))
+
+    # Valid directions should work
+    door_north = Door(direction="north", leads_to=(0, 1))
+    assert door_north.direction == "north"
+
+    door_south = Door(direction="south", leads_to=(0, -1))
+    assert door_south.direction == "south"
+
+    door_east = Door(direction="east", leads_to=(1, 0))
+    assert door_east.direction == "east"
+
+    door_west = Door(direction="west", leads_to=(-1, 0))
+    assert door_west.direction == "west"
+
+
+def test_bomb_validates_positive_values():
+    """Test Bomb validates positive values."""
+    # Test non-positive fuse_time
+    with pytest.raises(ValueError, match="fuse_time must be positive"):
+        Bomb(fuse_time=0.0, blast_radius=2.0)
+
+    with pytest.raises(ValueError, match="fuse_time must be positive"):
+        Bomb(fuse_time=-1.0, blast_radius=2.0)
+
+    # Test non-positive blast_radius
+    with pytest.raises(ValueError, match="blast_radius must be positive"):
+        Bomb(fuse_time=1.5, blast_radius=0.0)
+
+    with pytest.raises(ValueError, match="blast_radius must be positive"):
+        Bomb(fuse_time=1.5, blast_radius=-1.0)
+
+    # Positive values should work
+    bomb = Bomb(fuse_time=1.5, blast_radius=2.0)
+    assert bomb.fuse_time == 1.5
+    assert bomb.blast_radius == 2.0
+
+
+def test_miniboss_validates_boss_type():
+    """Test MiniBoss validates boss_type."""
+    # Test empty boss_type
+    with pytest.raises(ValueError, match="boss_type cannot be empty"):
+        MiniBoss(boss_type="", guaranteed_drop="damage_upgrade")
+
+    # Test invalid boss_type
+    with pytest.raises(ValueError, match="boss_type must be one of: glutton, hoarder, sentinel"):
+        MiniBoss(boss_type="invalid_boss", guaranteed_drop="damage_upgrade")
+
+    with pytest.raises(ValueError, match="boss_type must be one of: glutton, hoarder, sentinel"):
+        MiniBoss(boss_type="boss", guaranteed_drop="damage_upgrade")
+
+    # Valid boss types should work
+    glutton = MiniBoss(boss_type="glutton", guaranteed_drop="damage_upgrade")
+    assert glutton.boss_type == "glutton"
+
+    hoarder = MiniBoss(boss_type="hoarder", guaranteed_drop="key")
+    assert hoarder.boss_type == "hoarder"
+
+    sentinel = MiniBoss(boss_type="sentinel", guaranteed_drop="bomb")
+    assert sentinel.boss_type == "sentinel"
+
+
+def test_status_effect_validates():
+    """Test StatusEffect validates effect_type and duration."""
+    # Test empty effect_type
+    with pytest.raises(ValueError, match="effect_type cannot be empty"):
+        StatusEffect(effect_type="", duration=30.0)
+
+    # Test negative duration
+    with pytest.raises(ValueError, match="duration must be non-negative"):
+        StatusEffect(effect_type="spelunker_sense", duration=-1.0)
+
+    # Zero duration should be valid
+    effect = StatusEffect(effect_type="temporary_boost", duration=0.0)
+    assert effect.duration == 0.0
+
+    # Valid values should work
+    effect = StatusEffect(effect_type="spelunker_sense", duration=30.0)
+    assert effect.effect_type == "spelunker_sense"
+    assert effect.duration == 30.0

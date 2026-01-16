@@ -9,6 +9,14 @@ class Currency:
     bombs: int = 3
     keys: int = 0
 
+    def __post_init__(self):
+        if self.coins < 0:
+            raise ValueError("coins must be non-negative")
+        if self.bombs < 0:
+            raise ValueError("bombs must be non-negative")
+        if self.keys < 0:
+            raise ValueError("keys must be non-negative")
+
 
 @dataclass
 class Door:
@@ -16,6 +24,11 @@ class Door:
     direction: str  # "north", "south", "east", "west"
     leads_to: tuple[int, int]
     locked: bool = True
+
+    def __post_init__(self):
+        valid_directions = {"north", "south", "east", "west"}
+        if self.direction not in valid_directions:
+            raise ValueError("direction must be one of: north, south, east, west")
 
 
 @dataclass
@@ -32,6 +45,12 @@ class Bomb:
     blast_radius: float = 2.0
     owner: int = 0  # Player entity ID
 
+    def __post_init__(self):
+        if self.fuse_time <= 0:
+            raise ValueError("fuse_time must be positive")
+        if self.blast_radius <= 0:
+            raise ValueError("blast_radius must be positive")
+
 
 @dataclass
 class MiniBoss:
@@ -40,6 +59,13 @@ class MiniBoss:
     guaranteed_drop: str
     teleport_timer: float = 5.0  # For sentinel type
 
+    def __post_init__(self):
+        valid_boss_types = {"glutton", "hoarder", "sentinel"}
+        if not self.boss_type:
+            raise ValueError("boss_type cannot be empty")
+        if self.boss_type not in valid_boss_types:
+            raise ValueError("boss_type must be one of: glutton, hoarder, sentinel")
+
 
 @dataclass
 class MiniMap:
@@ -47,7 +73,7 @@ class MiniMap:
     visible_rooms: set[tuple[int, int]] = field(default_factory=set)
     current_position: tuple[int, int] = (0, 0)
 
-    def reveal_room(self, x: int, y: int):
+    def reveal_room(self, x: int, y: int) -> None:
         """Mark room as visited."""
         self.visible_rooms.add((x, y))
 
@@ -59,3 +85,9 @@ class StatusEffect:
     duration: float
     room_duration: bool = False
     timer: float = 0.0
+
+    def __post_init__(self):
+        if not self.effect_type:
+            raise ValueError("effect_type cannot be empty")
+        if self.duration < 0:
+            raise ValueError("duration must be non-negative")
