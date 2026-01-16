@@ -1,7 +1,7 @@
 """Currency entity creation functions."""
 import esper
 from src.components.core import Position, Sprite
-from src.components.currency import Coin, BombPickup
+from src.components.currency import Coin, BombPickup, HeartPickup
 
 
 def spawn_coin(world_name: str, x: float, y: float, value: int = 1) -> int:
@@ -42,3 +42,23 @@ def spawn_bomb_pickup(world_name: str, x: float, y: float, quantity: int = 1) ->
     esper.add_component(bomb_ent, BombPickup(quantity=quantity))
 
     return bomb_ent
+
+
+def spawn_heart(world_name: str, x: float, y: float, heal_amount: int = 1) -> int:
+    """Spawn a heart pickup entity.
+
+    Args:
+        world_name: Name of the world to spawn in
+        x: X position
+        y: Y position
+        heal_amount: Amount of health restored (default 1 for half-heart)
+
+    Returns:
+        Entity ID of created heart pickup
+    """
+    heart_ent = esper.create_entity()
+    esper.add_component(heart_ent, Position(x, y))
+    esper.add_component(heart_ent, Sprite("♥", "red"))
+    esper.add_component(heart_ent, HeartPickup(heal_amount=heal_amount))
+
+    return heart_ent

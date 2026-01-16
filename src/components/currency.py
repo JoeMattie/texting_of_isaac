@@ -49,3 +49,28 @@ class BombPickup:
     def __repr__(self) -> str:
         """Return string representation of bomb pickup."""
         return f"BombPickup(quantity={self.quantity})"
+
+
+class HeartPickup:
+    """Heart pickup component.
+
+    Tracks the amount of health restored by this pickup.
+    """
+
+    def __init__(self, heal_amount: int = 1):
+        """Initialize heart pickup component.
+
+        Args:
+            heal_amount: Amount of health restored (must be positive)
+
+        Raises:
+            ValueError: If heal_amount is not positive
+        """
+        if heal_amount <= 0:
+            raise ValueError(f"heal_amount must be positive (got {heal_amount})")
+
+        self.heal_amount: int = heal_amount
+
+    def __repr__(self) -> str:
+        """Return string representation of heart pickup."""
+        return f"HeartPickup(heal_amount={self.heal_amount})"

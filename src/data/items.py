@@ -47,5 +47,21 @@ ITEM_DEFINITIONS = {
             "damage": 1.5       # +1.5 damage
         },
         "special_effects": []
+    },
+    "mini_mushroom": {
+        "sprite": "m",
+        "color": "red",
+        "stat_modifiers": {
+            "damage": 0.3       # Small +0.3 damage boost
+        },
+        "special_effects": []
+    },
+    "fire_rate_up": {
+        "sprite": "F",
+        "color": "yellow",
+        "stat_modifiers": {
+            "fire_rate": 0.5    # +0.5 fire rate boost
+        },
+        "special_effects": []
     }
 }

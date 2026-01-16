@@ -1,6 +1,7 @@
 """Room manager system for handling room state and transitions."""
 import esper
 from src.game.dungeon import Dungeon, DungeonRoom, RoomType, RoomState
+from src.entities.rewards import spawn_room_clear_reward as _spawn_room_clear_reward
 
 
 class RoomManager(esper.Processor):
@@ -127,13 +128,13 @@ class RoomManager(esper.Processor):
     def spawn_room_clear_reward(self) -> None:
         """Spawn reward when room is cleared.
 
-        Implementation will be added in reward system integration.
+        Spawns one reward based on weighted random selection:
+        - 60% coins, 25% heart, 10% stat boost, 5% bombs
         """
-        # TODO: Implement reward spawning in reward system integration
-        # Will need to:
-        # - Roll random reward type (coins, heart, item, bombs)
-        # - Spawn appropriate entity at room center
-        pass
+        # Call the standalone reward spawning function
+        # Note: We need to determine which world to spawn in
+        # For now, use "main" world as default
+        _spawn_room_clear_reward("main")
 
     def process(self):
         """Process room manager (currently no per-frame logic)."""
