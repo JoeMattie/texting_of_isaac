@@ -90,6 +90,51 @@ class RoomManager(esper.Processor):
             # Entering uncleared combat room
             self.current_room.state = RoomState.COMBAT
 
+    def on_room_cleared(self) -> None:
+        """Called when last enemy in room dies.
+
+        This method handles the room clear event by marking the room as
+        cleared, updating state, unlocking doors, and spawning rewards.
+        """
+        # Mark room as cleared
+        self.current_room.cleared = True
+        self.current_room.state = RoomState.CLEARED
+
+        # Unlock all doors
+        self.unlock_all_doors()
+
+        # Spawn room-clear reward (implementation in integration tasks)
+        self.spawn_room_clear_reward()
+
+    def lock_all_doors(self) -> None:
+        """Lock all doors in current room.
+
+        Implementation will be added when door entities are integrated.
+        """
+        # TODO: Implement door locking in door system integration
+        # Will need to iterate over Door entities and set locked=True
+        pass
+
+    def unlock_all_doors(self) -> None:
+        """Unlock all doors in current room.
+
+        Implementation will be added when door entities are integrated.
+        """
+        # TODO: Implement door unlocking in door system integration
+        # Will need to iterate over Door entities and set locked=False
+        pass
+
+    def spawn_room_clear_reward(self) -> None:
+        """Spawn reward when room is cleared.
+
+        Implementation will be added in reward system integration.
+        """
+        # TODO: Implement reward spawning in reward system integration
+        # Will need to:
+        # - Roll random reward type (coins, heart, item, bombs)
+        # - Spawn appropriate entity at room center
+        pass
+
     def process(self):
         """Process room manager (currently no per-frame logic)."""
         pass

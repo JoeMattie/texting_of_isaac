@@ -260,3 +260,64 @@ def test_transition_calls_despawn_and_spawn():
     manager.transition_to_room((1, 0), "east")
 
     assert manager.current_position == (1, 0)
+
+
+def test_on_room_cleared_marks_room_cleared():
+    """Test on_room_cleared marks room as cleared."""
+    dungeon = Dungeon()
+    room = DungeonRoom(
+        position=(0, 0),
+        room_type=RoomType.COMBAT,
+        doors={"east": (1, 0)},
+        state=RoomState.COMBAT,
+        cleared=False,
+        enemies=[{"type": "chaser", "count": 1}]
+    )
+    dungeon.rooms[(0, 0)] = room
+    dungeon.start_position = (0, 0)
+
+    manager = RoomManager(dungeon)
+
+    assert room.cleared == False
+    assert room.state == RoomState.COMBAT
+
+    manager.on_room_cleared()
+
+    assert room.cleared == True
+    assert room.state == RoomState.CLEARED
+
+
+def test_lock_all_doors_method_exists():
+    """Test lock_all_doors method exists."""
+    dungeon = Dungeon()
+    room = DungeonRoom(
+        position=(0, 0),
+        room_type=RoomType.START,
+        doors={"east": (1, 0)},
+        state=RoomState.PEACEFUL
+    )
+    dungeon.rooms[(0, 0)] = room
+    dungeon.start_position = (0, 0)
+
+    manager = RoomManager(dungeon)
+
+    # Should not raise AttributeError
+    manager.lock_all_doors()
+
+
+def test_unlock_all_doors_method_exists():
+    """Test unlock_all_doors method exists."""
+    dungeon = Dungeon()
+    room = DungeonRoom(
+        position=(0, 0),
+        room_type=RoomType.START,
+        doors={"east": (1, 0)},
+        state=RoomState.PEACEFUL
+    )
+    dungeon.rooms[(0, 0)] = room
+    dungeon.start_position = (0, 0)
+
+    manager = RoomManager(dungeon)
+
+    # Should not raise AttributeError
+    manager.unlock_all_doors()
