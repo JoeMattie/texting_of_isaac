@@ -4,6 +4,7 @@ from src.config import Config
 from src.systems.input import InputSystem
 from src.systems.movement import MovementSystem
 from src.systems.shooting import ShootingSystem
+from src.systems.bomb import BombSystem
 from src.systems.ai import AISystem
 from src.systems.enemy_shooting import EnemyShootingSystem
 from src.systems.homing import HomingSystem
@@ -39,6 +40,9 @@ class GameEngine:
         self.shooting_system = ShootingSystem()
         self.world.add_processor(self.shooting_system, priority=3)
 
+        self.bomb_system = BombSystem(self.input_system)
+        self.world.add_processor(self.bomb_system, priority=4.7)
+
         self.movement_system = MovementSystem()
         self.world.add_processor(self.movement_system, priority=4)
 
@@ -71,6 +75,7 @@ class GameEngine:
         # Set delta time on systems that need it
         self.movement_system.dt = dt
         self.shooting_system.dt = dt
+        self.bomb_system.dt = dt
         self.ai_system.dt = dt
         self.enemy_shooting_system.dt = dt
         self.homing_system.dt = dt
