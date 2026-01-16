@@ -9,6 +9,15 @@ from src.components.game import Enemy, Player
 class CollisionSystem(esper.Processor):
     """Handles collision detection and damage."""
 
+    def __init__(self, room_manager=None):
+        """Initialize collision system.
+
+        Args:
+            room_manager: RoomManager instance for room transitions (optional)
+        """
+        super().__init__()
+        self.room_manager = room_manager
+
     def process(self):
         """Check all collisions and apply damage."""
         # Get all entities with colliders
@@ -23,6 +32,20 @@ class CollisionSystem(esper.Processor):
                 # Pass the current world name
                 if self._check_collision(e1, e2, esper.current_world):
                     self._handle_collision(e1, e2)
+
+        # Player-door collision for room transitions (only if room_manager available)
+        if self.room_manager:
+            from src.components.dungeon import Door
+
+            for player_ent, (player, player_pos, player_collider) in esper.get_components(Player, Position, Collider):
+                for door_ent, (door, door_pos, door_collider) in esper.get_components(Door, Position, Collider):
+                    # Only unlocked doors allow transitions
+                    if not door.locked and self._check_collision(player_ent, door_ent, esper.current_world):
+                        # Trigger room transition via RoomManager
+                        self.room_manager.transition_to_room(door.leads_to, door.direction)
+
+                        # Only transition through one door per frame
+                        break
 
     def _check_collision(self, e1: int, e2: int, world_name: str) -> bool:
         """Check if two entities collide.

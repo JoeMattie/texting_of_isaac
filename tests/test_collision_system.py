@@ -857,3 +857,158 @@ def test_coin_and_item_drops_independent():
     finally:
         random.random = original_random
         random.randint = original_randint
+
+
+def test_player_door_collision_triggers_transition():
+    """Test player colliding with unlocked door triggers room transition."""
+    from src.components.dungeon import Door
+    from src.components.core import Position
+    from src.components.combat import Collider
+    from src.components.core import Sprite
+    from src.components.game import Player
+    from src.game.dungeon import Dungeon, DungeonRoom, RoomType
+    from src.systems.room_manager import RoomManager
+    from unittest.mock import Mock
+
+    esper.switch_world("test_world")
+    esper.clear_database()
+
+    # Create dungeon with two connected rooms
+    dungeon = Dungeon()
+    room1_pos = (0, 0)
+    room2_pos = (0, -1)
+
+    dungeon.rooms[room1_pos] = DungeonRoom(
+        position=room1_pos,
+        room_type=RoomType.START,
+        doors={"north": room2_pos},
+        cleared=True
+    )
+    dungeon.rooms[room2_pos] = DungeonRoom(
+        position=room2_pos,
+        room_type=RoomType.COMBAT,
+        doors={"south": room1_pos},
+        cleared=False
+    )
+    dungeon.start_position = room1_pos
+
+    # Create room manager with mock transition method
+    room_manager = RoomManager(dungeon)
+    room_manager.transition_to_room = Mock()
+
+    # Create collision system with room manager
+    collision_system = CollisionSystem(room_manager)
+    esper.add_processor(collision_system)
+
+    # Create player at position (10, 5)
+    player = esper.create_entity()
+    esper.add_component(player, Player())
+    esper.add_component(player, Position(10, 5))
+    esper.add_component(player, Collider(0.5))
+
+    # Create unlocked door at position (10, 5) - overlapping with player
+    door = esper.create_entity()
+    esper.add_component(door, Door("north", room2_pos, locked=False))
+    esper.add_component(door, Position(10, 5))
+    esper.add_component(door, Collider(1.0))
+    esper.add_component(door, Sprite("▯", "cyan"))
+
+    # Process collisions
+    collision_system.process()
+
+    # Verify transition was triggered
+    room_manager.transition_to_room.assert_called_once_with(room2_pos, "north")
+
+
+def test_player_door_collision_locked_door_no_transition():
+    """Test player colliding with locked door does not trigger transition."""
+    from src.components.dungeon import Door
+    from src.components.core import Position
+    from src.components.combat import Collider
+    from src.components.core import Sprite
+    from src.components.game import Player
+    from src.game.dungeon import Dungeon, DungeonRoom, RoomType
+    from src.systems.room_manager import RoomManager
+    from unittest.mock import Mock
+
+    esper.switch_world("test_world")
+    esper.clear_database()
+
+    # Create dungeon
+    dungeon = Dungeon()
+    room1_pos = (0, 0)
+    room2_pos = (0, -1)
+
+    dungeon.rooms[room1_pos] = DungeonRoom(
+        position=room1_pos,
+        room_type=RoomType.START,
+        doors={"north": room2_pos},
+        cleared=True
+    )
+    dungeon.rooms[room2_pos] = DungeonRoom(
+        position=room2_pos,
+        room_type=RoomType.COMBAT,
+        doors={"south": room1_pos},
+        cleared=False
+    )
+    dungeon.start_position = room1_pos
+
+    # Create room manager with mock
+    room_manager = RoomManager(dungeon)
+    room_manager.transition_to_room = Mock()
+
+    # Create collision system
+    collision_system = CollisionSystem(room_manager)
+    esper.add_processor(collision_system)
+
+    # Create player
+    player = esper.create_entity()
+    esper.add_component(player, Player())
+    esper.add_component(player, Position(10, 5))
+    esper.add_component(player, Collider(0.5))
+
+    # Create LOCKED door at same position
+    door = esper.create_entity()
+    esper.add_component(door, Door("north", room2_pos, locked=True))
+    esper.add_component(door, Position(10, 5))
+    esper.add_component(door, Collider(1.0))
+    esper.add_component(door, Sprite("▮", "red"))
+
+    # Process collisions
+    collision_system.process()
+
+    # Verify NO transition was triggered
+    room_manager.transition_to_room.assert_not_called()
+
+
+def test_collision_system_without_room_manager():
+    """Test CollisionSystem works without room_manager (no door transitions)."""
+    from src.components.dungeon import Door
+    from src.components.core import Position
+    from src.components.combat import Collider
+    from src.components.core import Sprite
+    from src.components.game import Player
+
+    esper.switch_world("test_world")
+    esper.clear_database()
+
+    # Create collision system without room manager
+    collision_system = CollisionSystem(room_manager=None)
+    esper.add_processor(collision_system)
+
+    # Create player
+    player = esper.create_entity()
+    esper.add_component(player, Player())
+    esper.add_component(player, Position(10, 5))
+    esper.add_component(player, Collider(0.5))
+
+    # Create unlocked door
+    door = esper.create_entity()
+    esper.add_component(door, Door("north", (0, -1), locked=False))
+    esper.add_component(door, Position(10, 5))
+    esper.add_component(door, Collider(1.0))
+    esper.add_component(door, Sprite("▯", "cyan"))
+
+    # Should not crash when processing without room_manager
+    collision_system.process()
+    # If we get here without exception, test passes
