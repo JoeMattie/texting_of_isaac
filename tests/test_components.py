@@ -250,3 +250,74 @@ def test_collected_items_has_effect_validates_input():
 
     with pytest.raises(ValueError, match="effect_name cannot be empty"):
         collected.has_effect("")
+
+
+from src.components.dungeon import Currency, Door, RoomPosition, Bomb, MiniBoss, MiniMap, StatusEffect
+
+
+def test_currency_tracks_resources():
+    """Test Currency component."""
+    currency = Currency(coins=10, bombs=3, keys=2)
+    assert currency.coins == 10
+    assert currency.bombs == 3
+    assert currency.keys == 2
+
+
+def test_currency_defaults():
+    """Test Currency component defaults."""
+    currency = Currency()
+    assert currency.coins == 0
+    assert currency.bombs == 3  # Start with 3 bombs
+    assert currency.keys == 0
+
+
+def test_door_component():
+    """Test Door component."""
+    door = Door(direction="north", locked=True, leads_to=(0, 1))
+    assert door.direction == "north"
+    assert door.locked == True
+    assert door.leads_to == (0, 1)
+
+
+def test_room_position_component():
+    """Test RoomPosition component."""
+    pos = RoomPosition(x=5, y=3)
+    assert pos.x == 5
+    assert pos.y == 3
+
+
+def test_bomb_component():
+    """Test Bomb component."""
+    bomb = Bomb(fuse_time=1.5, blast_radius=2.0, owner=123)
+    assert bomb.fuse_time == 1.5
+    assert bomb.blast_radius == 2.0
+    assert bomb.owner == 123
+
+
+def test_miniboss_component():
+    """Test MiniBoss component."""
+    miniboss = MiniBoss(boss_type="glutton", guaranteed_drop="damage_upgrade")
+    assert miniboss.boss_type == "glutton"
+    assert miniboss.guaranteed_drop == "damage_upgrade"
+
+
+def test_minimap_component():
+    """Test MiniMap component."""
+    minimap = MiniMap()
+    assert minimap.visible_rooms == set()
+    assert minimap.current_position == (0, 0)
+
+
+def test_minimap_reveal_room():
+    """Test revealing rooms on minimap."""
+    minimap = MiniMap()
+    minimap.reveal_room(1, 2)
+    assert (1, 2) in minimap.visible_rooms
+
+
+def test_status_effect_component():
+    """Test StatusEffect component."""
+    effect = StatusEffect(effect_type="spelunker_sense", duration=30.0)
+    assert effect.effect_type == "spelunker_sense"
+    assert effect.duration == 30.0
+    assert effect.room_duration == False
