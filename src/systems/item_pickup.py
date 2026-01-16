@@ -5,7 +5,7 @@ import math
 from src.components.core import Position
 from src.components.combat import Stats, Collider
 from src.components.game import Player, Item, CollectedItems
-from src.components.currency import Coin
+from src.components.currency import Coin, BombPickup
 from src.components.dungeon import Currency
 
 
@@ -47,6 +47,17 @@ class ItemPickupSystem(esper.Processor):
                     # Pick up coin
                     currency.coins += coin.value
                     esper.delete_entity(coin_ent)
+
+        # Bomb pickup
+        for player_ent, (player, player_pos, currency) in esper.get_components(Player, Position, Currency):
+            for bomb_ent, (bomb_pickup, bomb_pos) in esper.get_components(BombPickup, Position):
+                # Check if player is close enough
+                distance = ((player_pos.x - bomb_pos.x) ** 2 + (player_pos.y - bomb_pos.y) ** 2) ** 0.5
+
+                if distance < Config.ITEM_PICKUP_RADIUS:
+                    # Pick up bomb
+                    currency.bombs += bomb_pickup.quantity
+                    esper.delete_entity(bomb_ent)
 
     def _check_overlap(self, pos1: Position, col1: Collider, pos2: Position, col2: Collider) -> bool:
         """Check if two circles overlap.

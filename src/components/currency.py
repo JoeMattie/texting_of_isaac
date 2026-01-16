@@ -24,3 +24,28 @@ class Coin:
     def __repr__(self) -> str:
         """Return string representation of coin."""
         return f"Coin(value={self.value})"
+
+
+class BombPickup:
+    """Bomb pickup component.
+
+    Tracks the number of bombs in this pickup.
+    """
+
+    def __init__(self, quantity: int = 1):
+        """Initialize bomb pickup component.
+
+        Args:
+            quantity: Number of bombs (must be positive)
+
+        Raises:
+            ValueError: If quantity is not positive
+        """
+        if quantity <= 0:
+            raise ValueError(f"quantity must be positive (got {quantity})")
+
+        self.quantity: int = quantity
+
+    def __repr__(self) -> str:
+        """Return string representation of bomb pickup."""
+        return f"BombPickup(quantity={self.quantity})"
