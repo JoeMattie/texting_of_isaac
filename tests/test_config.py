@@ -290,3 +290,28 @@ def test_minimap_display_radius_matches_implementation():
     """Test MINIMAP_DISPLAY_RADIUS is 3 (7x7 grid = ±3 rooms)."""
     from src.config import Config
     assert Config.MINIMAP_DISPLAY_RADIUS == 3
+
+
+def test_shop_item_prices_exist():
+    """Verify shop item prices defined."""
+    assert hasattr(Config, 'SHOP_ITEM_PRICES')
+    assert isinstance(Config.SHOP_ITEM_PRICES, dict)
+
+    # Check some expected items
+    assert "speed_boost" in Config.SHOP_ITEM_PRICES
+    assert "magic_mushroom" in Config.SHOP_ITEM_PRICES
+    assert "bomb_x3" in Config.SHOP_ITEM_PRICES
+
+
+def test_shop_prices_are_positive():
+    """Verify all shop prices are positive integers."""
+    for item_name, price in Config.SHOP_ITEM_PRICES.items():
+        assert isinstance(price, int)
+        assert price > 0
+
+
+def test_shop_generation_constants_exist():
+    """Verify shop generation constants defined."""
+    assert hasattr(Config, 'SHOP_ITEMS_MIN')
+    assert hasattr(Config, 'SHOP_ITEMS_MAX')
+    assert Config.SHOP_ITEMS_MIN <= Config.SHOP_ITEMS_MAX

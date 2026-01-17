@@ -70,3 +70,29 @@ class Config:
 
     # Mini-map
     MINIMAP_DISPLAY_RADIUS: int = 3
+
+    # Shop system
+    SHOP_ITEMS_MIN: int = 3
+    SHOP_ITEMS_MAX: int = 4
+
+    # Shop item prices (in coins)
+    SHOP_ITEM_PRICES: dict[str, int] = {
+        # Cheap items (5-7 coins)
+        "speed_boost": 5,
+        "mini_mushroom": 6,
+        "fire_rate_up": 7,
+
+        # Medium items (8-12 coins)
+        "triple_shot": 10,
+        "homing_shots": 10,
+        "piercing_tears": 12,
+
+        # Expensive items (13-15 coins)
+        "magic_mushroom": 15,
+        "brimstone": 15,
+
+        # Consumables
+        "bomb_x3": 5,
+        "treasure_map": 8,
+        "heart": 3,
+    }
