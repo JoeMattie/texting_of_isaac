@@ -129,6 +129,7 @@ def test_no_constants_are_none():
     assert Config.SHOP_ITEMS_MIN is not None
     assert Config.SHOP_ITEMS_MAX is not None
     assert Config.SHOP_ITEM_PRICES is not None
+    assert Config.EXPLOSIVE_TEAR_DAMAGE_MULTIPLIER is not None
 
 
 def test_integer_constants_are_integers():
@@ -173,6 +174,7 @@ def test_float_constants_are_numeric():
     assert isinstance(Config.BOMB_FUSE_TIME, (int, float))
     assert isinstance(Config.BOMB_BLAST_RADIUS, (int, float))
     assert isinstance(Config.BOMB_DAMAGE, (int, float))
+    assert isinstance(Config.EXPLOSIVE_TEAR_DAMAGE_MULTIPLIER, (int, float))
 
 
 def test_item_drop_chance_is_probability():
@@ -320,3 +322,10 @@ def test_shop_generation_constants_exist():
     assert hasattr(Config, 'SHOP_ITEMS_MIN')
     assert hasattr(Config, 'SHOP_ITEMS_MAX')
     assert Config.SHOP_ITEMS_MIN <= Config.SHOP_ITEMS_MAX
+
+
+def test_explosive_tear_damage_multiplier_exists():
+    """Verify explosive tear damage multiplier constant exists."""
+    assert hasattr(Config, 'EXPLOSIVE_TEAR_DAMAGE_MULTIPLIER')
+    assert isinstance(Config.EXPLOSIVE_TEAR_DAMAGE_MULTIPLIER, float)
+    assert 0 < Config.EXPLOSIVE_TEAR_DAMAGE_MULTIPLIER <= 1.0

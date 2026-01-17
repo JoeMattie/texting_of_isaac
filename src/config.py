@@ -68,6 +68,9 @@ class Config:
     BOMB_BLAST_RADIUS: float = 2.0
     BOMB_DAMAGE: float = 1.0
 
+    # Explosive tears
+    EXPLOSIVE_TEAR_DAMAGE_MULTIPLIER: float = 0.5  # 50% of bomb damage
+
     # Mini-map
     MINIMAP_DISPLAY_RADIUS: int = 3
 
