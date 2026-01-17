@@ -93,6 +93,7 @@ class Config:
         # Expensive items (13-15 coins)
         "magic_mushroom": 15,
         "brimstone": 15,
+        "explosive_tears": 15,
 
         # Consumables
         "bomb_x3": 5,

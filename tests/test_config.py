@@ -329,3 +329,11 @@ def test_explosive_tear_damage_multiplier_exists():
     assert hasattr(Config, 'EXPLOSIVE_TEAR_DAMAGE_MULTIPLIER')
     assert isinstance(Config.EXPLOSIVE_TEAR_DAMAGE_MULTIPLIER, float)
     assert 0 < Config.EXPLOSIVE_TEAR_DAMAGE_MULTIPLIER <= 1.0
+
+
+def test_explosive_tears_in_shop_prices():
+    """Verify explosive tears is in shop item prices."""
+    assert "explosive_tears" in Config.SHOP_ITEM_PRICES
+    assert Config.SHOP_ITEM_PRICES["explosive_tears"] > 0
+    # Expensive tier (same as magic_mushroom)
+    assert Config.SHOP_ITEM_PRICES["explosive_tears"] >= 15
