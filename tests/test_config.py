@@ -126,6 +126,9 @@ def test_no_constants_are_none():
     assert Config.BOMB_BLAST_RADIUS is not None
     assert Config.BOMB_DAMAGE is not None
     assert Config.MINIMAP_DISPLAY_RADIUS is not None
+    assert Config.SHOP_ITEMS_MIN is not None
+    assert Config.SHOP_ITEMS_MAX is not None
+    assert Config.SHOP_ITEM_PRICES is not None
 
 
 def test_integer_constants_are_integers():
@@ -147,6 +150,8 @@ def test_integer_constants_are_integers():
     assert isinstance(Config.STARTING_BOMBS, int)
     assert isinstance(Config.STARTING_COINS, int)
     assert isinstance(Config.MINIMAP_DISPLAY_RADIUS, int)
+    assert isinstance(Config.SHOP_ITEMS_MIN, int)
+    assert isinstance(Config.SHOP_ITEMS_MAX, int)
 
 
 def test_float_constants_are_numeric():
