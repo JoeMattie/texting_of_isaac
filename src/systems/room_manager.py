@@ -3,8 +3,10 @@ import esper
 from src.game.dungeon import Dungeon, DungeonRoom, RoomType, RoomState
 from src.entities.rewards import spawn_room_clear_reward as _spawn_room_clear_reward
 from src.entities.doors import spawn_door
+from src.entities.shop import create_shop_item, generate_shop_items
 from src.components.dungeon import Door
 from src.components.core import Sprite
+from src.config import Config
 
 
 class RoomManager(esper.Processor):
@@ -59,9 +61,12 @@ class RoomManager(esper.Processor):
         for direction, leads_to in self.current_room.doors.items():
             spawn_door("main", direction, leads_to, locked=should_lock)
 
+        # Spawn shop items if shop room
+        if self.current_room.room_type == RoomType.SHOP:
+            self._spawn_shop_items()
+
         # TODO: Implement additional entity spawning in integration tasks
         # - Spawn enemies if not cleared
-        # - Spawn shop items if shop room
         # - Spawn treasure pedestal if treasure room
 
     def _should_lock_doors(self) -> bool:
@@ -169,6 +174,21 @@ class RoomManager(esper.Processor):
 
             # Update current position
             minimap.current_position = self.current_position
+
+    def _spawn_shop_items(self) -> None:
+        """Spawn shop items in current room."""
+        # Generate 3-4 random items
+        item_names = generate_shop_items()
+
+        # Position items in row at top of room
+        # Spacing: divide room width by (num_items + 1)
+        num_items = len(item_names)
+        spacing = Config.ROOM_WIDTH / (num_items + 1)
+        y_pos = 8.0  # Top third of room
+
+        for i, item_name in enumerate(item_names):
+            x_pos = spacing * (i + 1)
+            create_shop_item("main", item_name, x_pos, y_pos)
 
     def process(self):
         """Process room manager (currently no per-frame logic)."""
