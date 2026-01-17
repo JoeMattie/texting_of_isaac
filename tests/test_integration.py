@@ -604,3 +604,72 @@ def test_shop_purchase_flow():
     # Verify entity removed
     pickup_system.process()  # Second frame should remove entity
     assert not esper.entity_exists(cheapest_ent)
+
+
+def test_explosive_tears_combat_scenario():
+    """Test full explosive tears combat: player with explosive effect damages enemy clusters."""
+    import esper
+    from src.entities.player import create_player
+    from src.entities.enemies import create_enemy
+    from src.systems.collision import CollisionSystem
+    from src.systems.bomb import BombSystem
+    from src.systems.input import InputSystem
+    from src.components.core import Position, Health
+    from src.components.combat import Collider, Projectile
+    from src.components.game import CollectedItems
+    from src.config import Config
+
+    world_name = "test_explosive_integration"
+    esper.switch_world(world_name)
+
+    try:
+        # Create player with explosive tears
+        player = create_player(world_name, 30, 10)
+        collected = esper.component_for_entity(player, CollectedItems)
+        collected.items.append(type('Item', (), {
+            'name': 'explosive_tears',
+            'stat_modifiers': {'damage': 0.3},
+            'special_effects': ['explosive']
+        })())
+
+        # Create cluster of 3 enemies
+        enemy1 = create_enemy(world_name, "chaser", 40, 10)  # Direct hit target
+        enemy2 = create_enemy(world_name, "chaser", 42, 10)  # 2 units away (horizontal)
+        enemy3 = create_enemy(world_name, "chaser", 40, 11.5)  # 1.5 units away (vertical)
+
+        # Get initial health values
+        enemy1_health = esper.component_for_entity(enemy1, Health)
+        enemy2_health = esper.component_for_entity(enemy2, Health)
+        enemy3_health = esper.component_for_entity(enemy3, Health)
+
+        initial_health1 = enemy1_health.current
+        initial_health2 = enemy2_health.current
+        initial_health3 = enemy3_health.current
+
+        # Create explosive projectile aimed at enemy1
+        proj = esper.create_entity()
+        esper.add_component(proj, Position(40.0, 10.0))
+        esper.add_component(proj, Collider(0.2))
+        esper.add_component(proj, Projectile(damage=1.0, owner=player))
+
+        # Create systems
+        input_system = InputSystem()
+        bomb_system = BombSystem(input_system)
+        collision_system = CollisionSystem(bomb_system=bomb_system)
+
+        # Process collision (triggers explosion)
+        collision_system.process()
+
+        # Verify enemy1 took direct hit + explosion damage
+        assert enemy1_health.current < initial_health1
+
+        # Verify enemy2 and enemy3 took explosion damage
+        explosion_damage = Config.BOMB_DAMAGE * Config.EXPLOSIVE_TEAR_DAMAGE_MULTIPLIER
+        assert enemy2_health.current == initial_health2 - explosion_damage
+        assert enemy3_health.current == initial_health3 - explosion_damage
+
+        # Verify projectile was deleted
+        assert not esper.entity_exists(proj)
+
+    finally:
+        esper.clear_database()
