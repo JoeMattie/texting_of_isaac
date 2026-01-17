@@ -143,3 +143,10 @@ class ShopItem:
     item_name: str
     price: int
     purchased: bool = False
+
+    def __post_init__(self):
+        """Validate shop item fields."""
+        if not self.item_name:
+            raise ValueError("item_name cannot be empty")
+        if self.price < 0:
+            raise ValueError("price must be non-negative")

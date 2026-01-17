@@ -509,3 +509,27 @@ def test_shop_item_defaults():
 
     shop_item = ShopItem(item_name="speed_boost", price=5)
     assert shop_item.purchased == False
+
+
+def test_shop_item_validates_empty_name():
+    """Test ShopItem rejects empty item name."""
+    from src.components.dungeon import ShopItem
+
+    with pytest.raises(ValueError, match="item_name cannot be empty"):
+        ShopItem(item_name="", price=10)
+
+
+def test_shop_item_validates_negative_price():
+    """Test ShopItem rejects negative price."""
+    from src.components.dungeon import ShopItem
+
+    with pytest.raises(ValueError, match="price must be non-negative"):
+        ShopItem(item_name="magic_mushroom", price=-5)
+
+
+def test_shop_item_allows_zero_price():
+    """Test ShopItem allows zero price (free items)."""
+    from src.components.dungeon import ShopItem
+
+    shop_item = ShopItem(item_name="free_sample", price=0)
+    assert shop_item.price == 0
