@@ -135,3 +135,11 @@ class StatusEffect:
             raise ValueError("effect_type cannot be empty")
         if self.duration < 0:
             raise ValueError("duration must be non-negative")
+
+
+@dataclass
+class ShopItem:
+    """Shop item component for items that can be purchased."""
+    item_name: str
+    price: int
+    purchased: bool = False

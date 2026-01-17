@@ -491,3 +491,21 @@ def test_minimap_should_show_room_for_visited():
 
     # Already visited room should return False (it will be rendered with ■ symbol separately)
     assert minimap.should_show_room((0, 0), dungeon) is False
+
+
+def test_shop_item_component():
+    """Test ShopItem component."""
+    from src.components.dungeon import ShopItem
+
+    shop_item = ShopItem(item_name="magic_mushroom", price=15)
+    assert shop_item.item_name == "magic_mushroom"
+    assert shop_item.price == 15
+    assert shop_item.purchased == False
+
+
+def test_shop_item_defaults():
+    """Test ShopItem component defaults."""
+    from src.components.dungeon import ShopItem
+
+    shop_item = ShopItem(item_name="speed_boost", price=5)
+    assert shop_item.purchased == False
