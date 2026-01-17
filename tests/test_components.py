@@ -445,3 +445,49 @@ def test_status_effect_validates():
     effect = StatusEffect(effect_type="spelunker_sense", duration=30.0)
     assert effect.effect_type == "spelunker_sense"
     assert effect.duration == 30.0
+
+
+def test_minimap_get_display_bounds_returns_correct_range():
+    """Test get_display_bounds returns ±3 from current position."""
+    minimap = MiniMap(current_position=(5, 10), visible_rooms=set())
+    min_x, min_y, max_x, max_y = minimap.get_display_bounds()
+
+    assert min_x == 2  # 5 - 3
+    assert min_y == 7  # 10 - 3
+    assert max_x == 8  # 5 + 3
+    assert max_y == 13  # 10 + 3
+
+
+def test_minimap_should_show_room_for_adjacent_to_visited():
+    """Test should_show_room returns True for rooms adjacent to visited rooms."""
+    from src.game.dungeon import Dungeon, DungeonRoom, RoomType
+
+    # Create minimal dungeon with connections
+    rooms = {
+        (0, 0): DungeonRoom(position=(0, 0), room_type=RoomType.START, doors={"east": (1, 0)}),
+        (1, 0): DungeonRoom(position=(1, 0), room_type=RoomType.COMBAT, doors={"west": (0, 0)}),
+    }
+    dungeon = Dungeon(rooms=rooms, start_position=(0, 0), main_path=[(0, 0), (1, 0)])
+
+    minimap = MiniMap(current_position=(0, 0), visible_rooms={(0, 0)})
+
+    # Room at (1, 0) is adjacent to visited (0, 0) via door
+    assert minimap.should_show_room((1, 0), dungeon) is True
+
+    # Room at (2, 0) doesn't exist
+    assert minimap.should_show_room((2, 0), dungeon) is False
+
+
+def test_minimap_should_show_room_for_visited():
+    """Test should_show_room returns False for already visited rooms (they use different symbol)."""
+    from src.game.dungeon import Dungeon, DungeonRoom, RoomType
+
+    rooms = {
+        (0, 0): DungeonRoom(position=(0, 0), room_type=RoomType.START, doors={}),
+    }
+    dungeon = Dungeon(rooms=rooms, start_position=(0, 0), main_path=[(0, 0)])
+
+    minimap = MiniMap(current_position=(0, 0), visible_rooms={(0, 0)})
+
+    # Already visited room should return False (it will be rendered with ■ symbol separately)
+    assert minimap.should_show_room((0, 0), dungeon) is False

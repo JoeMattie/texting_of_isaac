@@ -81,6 +81,46 @@ class MiniMap:
         """Mark room as visited."""
         self.visible_rooms.add((x, y))
 
+    def get_display_bounds(self) -> tuple[int, int, int, int]:
+        """Get min/max coordinates for display (±3 from current).
+
+        Returns:
+            (min_x, min_y, max_x, max_y) - Display boundary coordinates
+        """
+        from src.config import Config
+
+        cx, cy = self.current_position
+        radius = Config.MINIMAP_DISPLAY_RADIUS
+        return (cx - radius, cy - radius, cx + radius, cy + radius)
+
+    def should_show_room(self, position: tuple[int, int], dungeon) -> bool:
+        """Check if unvisited room should be shown (adjacent to visited via door).
+
+        Args:
+            position: Room coordinates to check
+            dungeon: Dungeon instance with room connections
+
+        Returns:
+            True if room should be shown as adjacent unvisited (□ symbol)
+        """
+        # Don't show if already visited (will use ■ symbol)
+        if position in self.visible_rooms:
+            return False
+
+        # Don't show if room doesn't exist
+        if position not in dungeon.rooms:
+            return False
+
+        # Show if any visited room has a door to this room
+        for visited_pos in self.visible_rooms:
+            if visited_pos in dungeon.rooms:
+                visited_room = dungeon.rooms[visited_pos]
+                # Check if this visited room has a door leading to target position
+                if position in visited_room.doors.values():
+                    return True
+
+        return False
+
 
 @dataclass
 class StatusEffect:

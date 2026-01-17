@@ -210,3 +210,48 @@ def test_render_without_item_pickup_system():
 
     # Top row should be all dots (default)
     assert all(cell['char'] == '.' for cell in grid[0])
+
+
+def test_render_displays_minimap_overlay():
+    """Test RenderSystem displays minimap overlay in top-right corner."""
+    from src.components.dungeon import MiniMap
+    from src.game.dungeon import Dungeon, DungeonRoom, RoomType
+    from src.systems.minimap_system import MiniMapSystem
+
+    test_world = "test_minimap_overlay"
+    esper.switch_world(test_world)
+    esper.clear_database()
+
+    # Create dungeon
+    rooms = {
+        (0, 0): DungeonRoom(position=(0, 0), room_type=RoomType.START, doors={}),
+    }
+    dungeon = Dungeon(rooms=rooms, start_position=(0, 0), main_path=[(0, 0)])
+
+    # Create minimap entity
+    minimap_ent = esper.create_entity()
+    esper.add_component(minimap_ent, MiniMap(current_position=(0, 0), visible_rooms={(0, 0)}))
+
+    # Create render system with minimap system
+    minimap_system = MiniMapSystem()
+    render_system = RenderSystem(minimap_system=minimap_system, dungeon=dungeon)
+
+    grid = render_system.render(test_world)
+
+    # Check that minimap appears in top-right corner
+    # Top-right should have border: ╔═══════╗
+    top_right_row = grid[0]
+    assert any(cell['char'] == '╔' for cell in top_right_row[-20:])
+
+
+def test_render_without_minimap_system():
+    """Test RenderSystem works without minimap system (graceful degradation)."""
+    test_world = "test_no_minimap"
+    esper.switch_world(test_world)
+    esper.clear_database()
+
+    render_system = RenderSystem()
+
+    # Should not crash
+    grid = render_system.render(test_world)
+    assert len(grid) > 0
