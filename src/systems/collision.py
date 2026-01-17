@@ -10,14 +10,16 @@ from src.components.game import Enemy, Player
 class CollisionSystem(esper.Processor):
     """Handles collision detection and damage."""
 
-    def __init__(self, room_manager=None):
+    def __init__(self, room_manager=None, bomb_system=None):
         """Initialize collision system.
 
         Args:
             room_manager: RoomManager instance for room transitions (optional)
+            bomb_system: BombSystem instance for explosive tears (optional)
         """
         super().__init__()
         self.room_manager = room_manager
+        self.bomb_system = bomb_system
 
     def process(self):
         """Check all collisions and apply damage."""
@@ -130,7 +132,29 @@ class CollisionSystem(esper.Processor):
         # Apply damage
         health.current -= proj.damage
 
-        # Check for piercing effect
+        # Check for explosive effect
+        has_explosive = False
+        if esper.entity_exists(proj.owner) and esper.has_component(proj.owner, Player):
+            if esper.has_component(proj.owner, CollectedItems):
+                collected = esper.component_for_entity(proj.owner, CollectedItems)
+                has_explosive = collected.has_effect("explosive")
+
+        # If explosive, trigger explosion and delete projectile (overrides piercing)
+        if has_explosive and self.bomb_system is not None:
+            # Get projectile position for explosion center
+            proj_pos = esper.component_for_entity(projectile, Position)
+
+            # Calculate explosion damage (50% of bomb damage)
+            explosion_damage = Config.BOMB_DAMAGE * Config.EXPLOSIVE_TEAR_DAMAGE_MULTIPLIER
+
+            # Trigger explosion (reuse bomb system logic)
+            self.bomb_system.damage_entities_in_radius(proj_pos, Config.BOMB_BLAST_RADIUS, explosion_damage)
+
+            # Always delete projectile after explosion (overrides piercing)
+            esper.delete_entity(projectile)
+            return
+
+        # Check for piercing effect (only if not explosive)
         has_piercing = False
         if esper.entity_exists(proj.owner) and esper.has_component(proj.owner, Player):
             if esper.has_component(proj.owner, CollectedItems):

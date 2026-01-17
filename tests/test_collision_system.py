@@ -1097,3 +1097,150 @@ def test_reposition_player_after_transition_from_west():
     # Should be at east wall, slightly inward
     assert player_pos.x == Config.ROOM_WIDTH - 2
     assert player_pos.y == Config.ROOM_HEIGHT / 2
+
+
+def test_explosive_projectile_triggers_explosion():
+    """Test explosive projectile creates area damage on hit."""
+    from src.entities.player import create_player
+    from src.entities.enemies import create_enemy
+    from src.systems.collision import CollisionSystem
+    from src.systems.bomb import BombSystem
+    from src.systems.input import InputSystem
+    from src.components.core import Position, Health
+    from src.components.combat import Collider, Projectile
+    from src.components.game import CollectedItems
+    from src.config import Config
+
+    world_name = "test_explosive_projectile"
+    esper.switch_world(world_name)
+    esper.clear_database()
+
+    # Create player with explosive tears
+    player = create_player(world_name, 30, 10)
+    collected = esper.component_for_entity(player, CollectedItems)
+    collected.items.append(type('Item', (), {'name': 'explosive_tears', 'stat_modifiers': {}, 'special_effects': ['explosive']})())
+
+    # Create enemy at same position (will be hit directly)
+    enemy1 = create_enemy(world_name, "chaser", 30, 10)
+    enemy1_health = esper.component_for_entity(enemy1, Health)
+    initial_health1 = enemy1_health.current
+
+    # Create enemy nearby (should be hit by explosion)
+    enemy2 = create_enemy(world_name, "chaser", 32, 10)  # 2 units away
+    enemy2_health = esper.component_for_entity(enemy2, Health)
+    initial_health2 = enemy2_health.current
+
+    # Create explosive projectile
+    proj = esper.create_entity()
+    esper.add_component(proj, Position(30.0, 10.0))
+    esper.add_component(proj, Collider(0.2))
+    esper.add_component(proj, Projectile(damage=1.0, owner=player))
+
+    # Create collision system with bomb system
+    input_system = InputSystem()
+    bomb_system = BombSystem(input_system)
+    collision_system = CollisionSystem()
+    collision_system.bomb_system = bomb_system
+
+    # Process collision
+    collision_system.process()
+
+    # Verify direct hit enemy took projectile damage
+    direct_damage = 1.0  # projectile damage
+    assert enemy1_health.current < initial_health1
+
+    # Verify nearby enemy took explosion damage
+    explosion_damage = Config.BOMB_DAMAGE * Config.EXPLOSIVE_TEAR_DAMAGE_MULTIPLIER
+    assert enemy2_health.current == initial_health2 - explosion_damage
+
+    # Verify projectile was deleted
+    assert not esper.entity_exists(proj)
+
+
+def test_explosive_overrides_piercing():
+    """Test explosive effect overrides piercing."""
+    from src.entities.player import create_player
+    from src.entities.enemies import create_enemy
+    from src.systems.collision import CollisionSystem
+    from src.systems.bomb import BombSystem
+    from src.systems.input import InputSystem
+    from src.components.core import Position
+    from src.components.combat import Collider, Projectile
+    from src.components.game import CollectedItems
+
+    world_name = "test_explosive_piercing"
+    esper.switch_world(world_name)
+    esper.clear_database()
+
+    # Create player with both explosive and piercing
+    player = create_player(world_name, 30, 10)
+    collected = esper.component_for_entity(player, CollectedItems)
+    collected.items.append(type('Item', (), {'name': 'explosive_tears', 'stat_modifiers': {}, 'special_effects': ['explosive']})())
+    collected.items.append(type('Item', (), {'name': 'piercing_tears', 'stat_modifiers': {}, 'special_effects': ['piercing']})())
+
+    # Create enemy
+    enemy = create_enemy(world_name, "chaser", 30, 10)
+
+    # Create projectile
+    proj = esper.create_entity()
+    esper.add_component(proj, Position(30.0, 10.0))
+    esper.add_component(proj, Collider(0.2))
+    esper.add_component(proj, Projectile(damage=1.0, owner=player))
+
+    # Create collision system with bomb system
+    input_system = InputSystem()
+    bomb_system = BombSystem(input_system)
+    collision_system = CollisionSystem()
+    collision_system.bomb_system = bomb_system
+
+    # Process collision
+    collision_system.process()
+
+    # Verify projectile was deleted (explosive overrides piercing)
+    assert not esper.entity_exists(proj)
+
+
+def test_explosive_respects_invincibility():
+    """Test explosion respects player invincibility frames."""
+    from src.entities.player import create_player
+    from src.entities.enemies import create_enemy
+    from src.systems.collision import CollisionSystem
+    from src.systems.bomb import BombSystem
+    from src.systems.input import InputSystem
+    from src.components.core import Position, Health
+    from src.components.combat import Collider, Projectile
+    from src.components.game import CollectedItems, Invincible
+
+    world_name = "test_explosive_invincibility"
+    esper.switch_world(world_name)
+    esper.clear_database()
+
+    # Create player with explosive tears and invincibility
+    player = create_player(world_name, 30, 10)
+    collected = esper.component_for_entity(player, CollectedItems)
+    collected.items.append(type('Item', (), {'name': 'explosive_tears', 'stat_modifiers': {}, 'special_effects': ['explosive']})())
+    esper.add_component(player, Invincible(duration=1.0))
+
+    player_health = esper.component_for_entity(player, Health)
+    initial_health = player_health.current
+
+    # Create enemy at player position
+    enemy = create_enemy(world_name, "chaser", 30, 10)
+
+    # Create explosive projectile at player position (will explode near player)
+    proj = esper.create_entity()
+    esper.add_component(proj, Position(30.0, 10.0))
+    esper.add_component(proj, Collider(0.2))
+    esper.add_component(proj, Projectile(damage=1.0, owner=player))
+
+    # Create collision system with bomb system
+    input_system = InputSystem()
+    bomb_system = BombSystem(input_system)
+    collision_system = CollisionSystem()
+    collision_system.bomb_system = bomb_system
+
+    # Process collision
+    collision_system.process()
+
+    # Verify player health unchanged (invincibility protected from explosion)
+    assert player_health.current == initial_health

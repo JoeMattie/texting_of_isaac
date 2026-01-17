@@ -55,7 +55,7 @@ class GameEngine:
         self.homing_system = HomingSystem()
         self.world.add_processor(self.homing_system, priority=4.5)
 
-        self.collision_system = CollisionSystem()
+        self.collision_system = CollisionSystem(bomb_system=self.bomb_system)
         self.world.add_processor(self.collision_system, priority=5)
 
         self.invincibility_system = InvincibilitySystem()
