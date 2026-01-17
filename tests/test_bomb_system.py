@@ -714,3 +714,41 @@ def test_bomb_explosion_respects_player_invincibility():
     # Player should NOT take damage due to invincibility frames
     assert player_health.current == original_health
     assert player_health.current == 6  # No damage taken
+
+
+def test_bomb_explosion_custom_damage():
+    """Test bomb explosion with custom damage value."""
+    from src.entities.player import create_player
+    from src.entities.enemies import create_enemy
+    from src.systems.bomb import BombSystem
+    from src.systems.input import InputSystem
+    from src.components.core import Position, Health
+    from src.config import Config
+
+    world_name = "test_bomb_custom_damage"
+    esper.switch_world(world_name)
+    esper.clear_database()
+
+    # Create player
+    player = create_player(esper, 30, 10)
+
+    # Create enemy near explosion center
+    enemy = create_enemy(esper, "chaser", 30, 10)
+    enemy_health = esper.component_for_entity(enemy, Health)
+    initial_health = enemy_health.current
+
+    # Create bomb system
+    input_system = InputSystem()
+    bomb_system = BombSystem(input_system)
+
+    # Get explosion center
+    explosion_pos = Position(30.0, 10.0)
+
+    # Custom damage (half of normal bomb damage)
+    custom_damage = Config.BOMB_DAMAGE * 0.5
+
+    # Trigger explosion with custom damage
+    bomb_system.damage_entities_in_radius(explosion_pos, Config.BOMB_BLAST_RADIUS, custom_damage)
+
+    # Verify custom damage applied
+    assert enemy_health.current == initial_health - custom_damage

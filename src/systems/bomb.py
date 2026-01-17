@@ -82,13 +82,17 @@ class BombSystem(esper.Processor):
         # Remove bomb
         esper.delete_entity(bomb_ent, immediate=True)
 
-    def damage_entities_in_radius(self, center: Position, radius: float):
+    def damage_entities_in_radius(self, center: Position, radius: float, damage: float = None):
         """Deal damage to entities within blast radius.
 
         Args:
             center: Position of the explosion center
             radius: Blast radius to check for damage
+            damage: Damage to apply (defaults to Config.BOMB_DAMAGE)
         """
+        if damage is None:
+            damage = Config.BOMB_DAMAGE
+
         for ent, (pos, health) in esper.get_components(Position, Health):
             # Skip entities that are already dead
             if health.current <= 0:
@@ -103,4 +107,4 @@ class BombSystem(esper.Processor):
 
             # Apply damage if within blast radius
             if distance <= radius:
-                health.current -= Config.BOMB_DAMAGE
+                health.current -= damage
