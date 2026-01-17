@@ -529,3 +529,78 @@ def test_full_minimap_navigation():
                 break
 
     assert top_right_has_border, "Minimap border should appear in top-right corner"
+
+
+def test_shop_purchase_flow():
+    """Test full shop flow: enter shop, buy item, verify effects."""
+    from src.game.dungeon import Dungeon, DungeonRoom, RoomType
+    from src.systems.room_manager import RoomManager
+    from src.systems.item_pickup import ItemPickupSystem
+    from src.components.dungeon import Currency, ShopItem
+    from src.components.game import Player, CollectedItems
+
+    # Note: RoomManager spawns shop items in "main" world (hardcoded)
+    esper.switch_world("main")
+    esper.clear_database()
+
+    # Create dungeon with shop
+    dungeon = Dungeon()
+    shop_pos = (0, 0)
+    dungeon.rooms[shop_pos] = DungeonRoom(
+        position=shop_pos,
+        room_type=RoomType.SHOP,
+        doors={},
+        visited=False,
+        cleared=False
+    )
+    dungeon.start_position = shop_pos
+
+    # Create player with coins
+    player = create_player("main", 30, 10)
+    esper.add_component(player, Currency(coins=15, bombs=3))
+
+    # Create room manager and spawn shop items
+    manager = RoomManager(dungeon)
+    manager.spawn_room_contents()
+
+    # Verify shop items spawned
+    shop_items = list(esper.get_components(ShopItem, Position))
+    assert len(shop_items) >= 3
+
+    # Find cheapest item
+    cheapest_ent = None
+    cheapest_price = 999
+    for ent, (shop_item, pos) in shop_items:
+        if shop_item.price < cheapest_price:
+            cheapest_price = shop_item.price
+            cheapest_ent = ent
+
+    # Move player to item
+    player_pos = esper.component_for_entity(player, Position)
+    item_pos = esper.component_for_entity(cheapest_ent, Position)
+    player_pos.x = item_pos.x
+    player_pos.y = item_pos.y
+
+    # Get initial coins
+    currency = esper.component_for_entity(player, Currency)
+    initial_coins = currency.coins
+
+    # Process pickup
+    pickup_system = ItemPickupSystem()
+    pickup_system.dt = 0.016
+    pickup_system.process()
+
+    # Verify purchase
+    assert currency.coins == initial_coins - cheapest_price
+
+    # Verify item purchased
+    shop_item = esper.component_for_entity(cheapest_ent, ShopItem)
+    assert shop_item.purchased == True
+
+    # Verify item applied
+    collected = esper.component_for_entity(player, CollectedItems)
+    assert any(item.name == shop_item.item_name for item in collected.items)
+
+    # Verify entity removed
+    pickup_system.process()  # Second frame should remove entity
+    assert not esper.entity_exists(cheapest_ent)
