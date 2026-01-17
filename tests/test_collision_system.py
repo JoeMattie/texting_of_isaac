@@ -1145,9 +1145,11 @@ def test_explosive_projectile_triggers_explosion():
     # Process collision
     collision_system.process()
 
-    # Verify direct hit enemy took projectile damage
+    # Verify direct hit enemy took both projectile + explosion damage
     direct_damage = 1.0  # projectile damage
-    assert enemy1_health.current < initial_health1
+    explosion_damage = Config.BOMB_DAMAGE * Config.EXPLOSIVE_TEAR_DAMAGE_MULTIPLIER
+    expected_total_damage = direct_damage + explosion_damage
+    assert enemy1_health.current == initial_health1 - expected_total_damage
 
     # Verify nearby enemy took explosion damage
     explosion_damage = Config.BOMB_DAMAGE * Config.EXPLOSIVE_TEAR_DAMAGE_MULTIPLIER
