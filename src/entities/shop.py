@@ -3,6 +3,7 @@ import random
 import esper
 from src.config import Config
 from src.components.core import Position, Sprite
+from src.components.combat import Collider
 from src.components.game import Item
 from src.components.dungeon import ShopItem
 from src.data.items import ITEM_DEFINITIONS
@@ -45,6 +46,9 @@ def create_shop_item(world_name: str, item_name: str, x: float, y: float) -> int
     # Add position
     esper.add_component(entity, Position(x, y))
 
+    # Add collider for pickup detection
+    esper.add_component(entity, Collider(Config.ITEM_PICKUP_RADIUS))
+
     # Add sprite (use item sprite from definition)
     sprite_char = item_def.get("sprite", "?")
     sprite_color = item_def.get("color", "yellow")
@@ -59,7 +63,15 @@ def generate_shop_items() -> list[str]:
     Returns:
         List of 3-4 item names for shop
     """
-    all_items = list(Config.SHOP_ITEM_PRICES.keys())
+    # Filter to only items that exist in ITEM_DEFINITIONS
+    available_items = [
+        item_name for item_name in Config.SHOP_ITEM_PRICES.keys()
+        if item_name in ITEM_DEFINITIONS
+    ]
+
     num_items = random.randint(Config.SHOP_ITEMS_MIN, Config.SHOP_ITEMS_MAX)
 
-    return random.sample(all_items, num_items)
+    # Ensure we don't request more items than available
+    num_items = min(num_items, len(available_items))
+
+    return random.sample(available_items, num_items)

@@ -58,3 +58,15 @@ def test_generate_shop_items_randomness(world):
     # At least 2 different combinations in 10 tries
     unique_results = set(results)
     assert len(unique_results) >= 2
+
+
+def test_shop_item_has_collider(world):
+    """Test shop item has collider for interaction."""
+    from src.components.combat import Collider
+    from src.config import Config
+
+    entity = create_shop_item(world, "magic_mushroom", 30.0, 10.0)
+
+    assert esper.has_component(entity, Collider)
+    collider = esper.component_for_entity(entity, Collider)
+    assert collider.radius == Config.ITEM_PICKUP_RADIUS
