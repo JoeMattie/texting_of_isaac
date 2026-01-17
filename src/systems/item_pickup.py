@@ -21,6 +21,7 @@ class ItemPickupSystem(esper.Processor):
     def process(self):
         """Check for item pickups and apply effects."""
         from src.config import Config
+        from src.components.dungeon import Currency, ShopItem
 
         # Decrement notification timer
         if self.notification_timer > 0:
@@ -30,12 +31,48 @@ class ItemPickupSystem(esper.Processor):
 
         # Check for Player + Item collisions
         for player_ent, (player, player_pos, player_col) in esper.get_components(Player, Position, Collider):
+            # Get player currency (may not exist)
+            currency = None
+            if esper.has_component(player_ent, Currency):
+                currency = esper.component_for_entity(player_ent, Currency)
+
             for item_ent, (item, item_pos, item_col) in esper.get_components(Item, Position, Collider):
                 # Skip if entity was already deleted in this frame
                 if not esper.entity_exists(item_ent):
                     continue
+
                 if self._check_overlap(player_pos, player_col, item_pos, item_col):
-                    self._pickup_item(player_ent, item_ent, item)
+                    # Check if this is a shop item
+                    if esper.has_component(item_ent, ShopItem):
+                        shop_item = esper.component_for_entity(item_ent, ShopItem)
+
+                        # Skip if already purchased
+                        if shop_item.purchased:
+                            continue
+
+                        # Check if player has currency component and enough coins
+                        if currency is None or currency.coins < shop_item.price:
+                            # Cannot afford - show notification
+                            self.notification = "Not enough coins!"
+                            self.notification_timer = Config.NOTIFICATION_DURATION
+                            continue
+
+                        # Purchase item
+                        currency.coins -= shop_item.price
+                        shop_item.purchased = True
+
+                        # Apply item effects
+                        self._apply_item(player_ent, item)
+
+                        # Show notification
+                        self.notification = f"Purchased {item.name}!"
+                        self.notification_timer = Config.NOTIFICATION_DURATION
+
+                        # Remove item entity
+                        esper.delete_entity(item_ent)
+                    else:
+                        # Regular item - free pickup
+                        self._pickup_item(player_ent, item_ent, item)
 
         # Coin pickup
         for player_ent, (player, player_pos, currency) in esper.get_components(Player, Position, Currency):
@@ -82,16 +119,13 @@ class ItemPickupSystem(esper.Processor):
         distance = math.sqrt(dx * dx + dy * dy)
         return distance < (col1.radius + col2.radius)
 
-    def _pickup_item(self, player_ent: int, item_ent: int, item: Item):
-        """Apply item effects and remove item entity.
+    def _apply_item(self, player_ent: int, item: Item):
+        """Apply item effects to player.
 
         Args:
             player_ent: Player entity ID
-            item_ent: Item entity ID
             item: Item component
         """
-        from src.config import Config
-
         # Apply stat modifiers
         stats = esper.component_for_entity(player_ent, Stats)
         for stat_name, value in item.stat_modifiers.items():
@@ -107,6 +141,19 @@ class ItemPickupSystem(esper.Processor):
             esper.add_component(player_ent, CollectedItems())
         collected = esper.component_for_entity(player_ent, CollectedItems)
         collected.items.append(item)
+
+    def _pickup_item(self, player_ent: int, item_ent: int, item: Item):
+        """Apply item effects and remove item entity.
+
+        Args:
+            player_ent: Player entity ID
+            item_ent: Item entity ID
+            item: Item component
+        """
+        from src.config import Config
+
+        # Apply item effects
+        self._apply_item(player_ent, item)
 
         # Show notification
         self.notification = f"Picked up: {item.name}"

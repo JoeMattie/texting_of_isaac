@@ -291,3 +291,136 @@ def test_notification_doesnt_clear_prematurely():
     # Verify notification still visible
     assert system.notification == "Test message"
     assert system.notification_timer > 0
+
+
+def test_shop_item_purchase_success():
+    """Test purchasing shop item with enough coins."""
+    from src.entities.player import create_player
+    from src.entities.shop import create_shop_item
+    from src.components.dungeon import Currency, ShopItem
+
+    world_name = "test_world"
+    esper.switch_world(world_name)
+
+    # Create player with coins
+    player = create_player(world_name, 30, 10)
+    esper.add_component(player, Currency(coins=10, bombs=3))
+
+    # Create shop item costing 5 coins
+    shop_item_ent = create_shop_item(world_name, "speed_boost", 30, 10)
+
+    # Create and run system
+    system = ItemPickupSystem()
+    system.dt = 0.016
+    system.process()
+
+    # Check coins deducted
+    currency = esper.component_for_entity(player, Currency)
+    assert currency.coins == 5  # 10 - 5
+
+    # Check item purchased
+    shop_item = esper.component_for_entity(shop_item_ent, ShopItem)
+    assert shop_item.purchased == True
+
+    # Check item applied to player
+    collected = esper.component_for_entity(player, CollectedItems)
+    assert len(collected.items) == 1
+    assert collected.items[0].name == "speed_boost"
+
+
+def test_shop_item_insufficient_funds():
+    """Test cannot purchase without enough coins."""
+    from src.entities.player import create_player
+    from src.entities.shop import create_shop_item
+    from src.components.dungeon import Currency, ShopItem
+
+    world_name = "test_world"
+    esper.switch_world(world_name)
+
+    # Create player with insufficient coins
+    player = create_player(world_name, 30, 10)
+    esper.add_component(player, Currency(coins=3, bombs=3))
+
+    # Create shop item costing 5 coins
+    shop_item_ent = create_shop_item(world_name, "speed_boost", 30, 10)
+
+    # Create and run system
+    system = ItemPickupSystem()
+    system.dt = 0.016
+    system.process()
+
+    # Check coins unchanged
+    currency = esper.component_for_entity(player, Currency)
+    assert currency.coins == 3
+
+    # Check item not purchased
+    shop_item = esper.component_for_entity(shop_item_ent, ShopItem)
+    assert shop_item.purchased == False
+
+    # Check item not applied
+    # Player may have CollectedItems from creation, check it doesn't contain speed_boost
+    if esper.has_component(player, CollectedItems):
+        collected = esper.component_for_entity(player, CollectedItems)
+        item_names = [item.name for item in collected.items]
+        assert "speed_boost" not in item_names
+
+
+def test_shop_item_already_purchased():
+    """Test cannot purchase item twice."""
+    from src.entities.player import create_player
+    from src.entities.shop import create_shop_item
+    from src.components.dungeon import Currency, ShopItem
+
+    world_name = "test_world"
+    esper.switch_world(world_name)
+
+    # Create player with coins
+    player = create_player(world_name, 30, 10)
+    esper.add_component(player, Currency(coins=20, bombs=3))
+
+    # Create shop item
+    shop_item_ent = create_shop_item(world_name, "speed_boost", 30, 10)
+
+    # Mark as already purchased
+    shop_item = esper.component_for_entity(shop_item_ent, ShopItem)
+    shop_item.purchased = True
+
+    # Create and run system
+    system = ItemPickupSystem()
+    system.dt = 0.016
+    system.process()
+
+    # Check coins unchanged
+    currency = esper.component_for_entity(player, Currency)
+    assert currency.coins == 20
+
+
+def test_regular_item_pickup_still_works():
+    """Test regular (non-shop) items still work."""
+    from src.entities.player import create_player
+    from src.entities.items import create_item
+    from src.components.dungeon import Currency
+
+    world_name = "test_world"
+    esper.switch_world(world_name)
+
+    # Create player
+    player = create_player(world_name, 30, 10)
+    esper.add_component(player, Currency(coins=0, bombs=3))
+
+    # Create regular item (no ShopItem component)
+    item_ent = create_item(world_name, "magic_mushroom", 30, 10)
+
+    # Create and run system
+    system = ItemPickupSystem()
+    system.dt = 0.016
+    system.process()
+
+    # Check item picked up for free
+    collected = esper.component_for_entity(player, CollectedItems)
+    item_names = [item.name for item in collected.items]
+    assert "magic_mushroom" in item_names
+
+    # Check coins unchanged
+    currency = esper.component_for_entity(player, Currency)
+    assert currency.coins == 0
