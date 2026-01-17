@@ -63,5 +63,13 @@ ITEM_DEFINITIONS = {
             "fire_rate": 0.5    # +0.5 fire rate boost
         },
         "special_effects": []
+    },
+    "explosive_tears": {
+        "sprite": "E",
+        "color": "orange",
+        "stat_modifiers": {
+            "damage": 0.3  # +0.3 damage bonus
+        },
+        "special_effects": ["explosive"]
     }
 }

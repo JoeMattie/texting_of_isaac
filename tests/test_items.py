@@ -85,3 +85,24 @@ def test_spawn_random_item():
     # Check item name is valid
     item = esper.component_for_entity(entity, Item)
     assert item.name in ITEM_DEFINITIONS
+
+
+def test_explosive_tears_item_exists():
+    """Test explosive tears item definition."""
+    from src.data.items import ITEM_DEFINITIONS
+
+    assert "explosive_tears" in ITEM_DEFINITIONS
+    item = ITEM_DEFINITIONS["explosive_tears"]
+
+    # Verify structure
+    assert "sprite" in item
+    assert "color" in item
+    assert "stat_modifiers" in item
+    assert "special_effects" in item
+
+    # Verify explosive effect
+    assert "explosive" in item["special_effects"]
+
+    # Verify has damage boost
+    assert "damage" in item["stat_modifiers"]
+    assert item["stat_modifiers"]["damage"] > 0
