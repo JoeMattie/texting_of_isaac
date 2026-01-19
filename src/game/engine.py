@@ -1,4 +1,6 @@
 """Main game engine and loop."""
+from enum import Enum
+
 import esper
 from src.config import Config
 from src.systems.input import InputSystem
@@ -13,6 +15,15 @@ from src.systems.invincibility import InvincibilitySystem
 from src.systems.item_pickup import ItemPickupSystem
 from src.systems.render import RenderSystem
 from src.systems.minimap_system import MiniMapSystem
+
+
+class GameState(Enum):
+    """Game state management."""
+    PLAYING = "playing"
+    BOSS_FIGHT = "boss_fight"
+    FLOOR_TRANSITION = "floor_transition"
+    VICTORY = "victory"
+    GAME_OVER = "game_over"
 
 
 class GameEngine:

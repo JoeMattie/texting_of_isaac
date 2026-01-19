@@ -102,3 +102,18 @@ def test_engine_connects_render_to_item_pickup():
     # Check RenderSystem has reference to ItemPickupSystem
     assert hasattr(engine.render_system, 'item_pickup_system')
     assert engine.render_system.item_pickup_system is engine.item_pickup_system
+
+
+def test_game_state_enum_exists():
+    """Test GameState enum has all required states."""
+    from src.game.engine import GameState
+
+    assert hasattr(GameState, 'PLAYING')
+    assert hasattr(GameState, 'BOSS_FIGHT')
+    assert hasattr(GameState, 'FLOOR_TRANSITION')
+    assert hasattr(GameState, 'VICTORY')
+    assert hasattr(GameState, 'GAME_OVER')
+
+    assert GameState.PLAYING.value == "playing"
+    assert GameState.VICTORY.value == "victory"
+    assert GameState.GAME_OVER.value == "game_over"
