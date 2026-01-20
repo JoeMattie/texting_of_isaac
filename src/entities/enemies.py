@@ -51,13 +51,14 @@ ENEMY_DATA = {
 }
 
 
-def create_enemy(world_name: str, enemy_type: str, x: float, y: float) -> int:
+def create_enemy(world_name: str, enemy_type: str, x: float, y: float, floor: int = 1) -> int:
     """Create an enemy entity.
 
     Args:
         world_name: ECS world name
         enemy_type: Type of enemy ("chaser", "shooter", etc.)
         x, y: Starting position
+        floor: Current floor number for stat scaling (default: 1)
 
     Returns:
         Entity ID of created enemy
@@ -69,9 +70,14 @@ def create_enemy(world_name: str, enemy_type: str, x: float, y: float) -> int:
     data = ENEMY_DATA[enemy_type]
     entity = esper.create_entity()
 
+    # Apply floor scaling to HP
+    base_hp = data["hp"]
+    hp_multiplier = Config.FLOOR_HP_MULTIPLIERS.get(floor, 1.0)
+    scaled_hp = int(base_hp * hp_multiplier)
+
     esper.add_component(entity, Position(x, y))
     esper.add_component(entity, Velocity(0.0, 0.0))
-    esper.add_component(entity, Health(data["hp"], data["hp"]))
+    esper.add_component(entity, Health(scaled_hp, scaled_hp))
     esper.add_component(entity, Sprite(data["sprite"][0], data["sprite"][1]))
     esper.add_component(entity, Collider(Config.ENEMY_HITBOX))
     esper.add_component(entity, Enemy(enemy_type))
