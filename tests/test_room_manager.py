@@ -724,6 +724,258 @@ def test_shop_items_positioned_correctly():
         assert pos.y < 10  # Top half of 20-height room
 
 
+def test_room_manager_tracks_current_floor():
+    """Test RoomManager tracks current_floor attribute."""
+    dungeon = Dungeon()
+    dungeon.rooms[(0, 0)] = DungeonRoom(
+        position=(0, 0),
+        room_type=RoomType.START,
+        doors={}
+    )
+    dungeon.start_position = (0, 0)
+
+    manager = RoomManager(dungeon)
+
+    # Should start at floor 1
+    assert manager.current_floor == 1
+
+
+def test_enemies_spawned_with_floor_scaling():
+    """Test enemies created with correct floor parameter for stat scaling."""
+    from src.components.game import Enemy
+    from src.components.core import Health
+
+    # Create dungeon with combat room
+    dungeon = Dungeon()
+    dungeon.rooms[(0, 0)] = DungeonRoom(
+        position=(0, 0),
+        room_type=RoomType.COMBAT,
+        doors={},
+        enemies=[{"type": "chaser", "count": 2}],
+        cleared=False
+    )
+    dungeon.start_position = (0, 0)
+
+    esper.switch_world("main")
+    # Create manager on floor 3 for clear scaling test
+    manager = RoomManager(dungeon, current_floor=3)
+
+    # Spawn room contents (should spawn enemies with floor=3)
+    manager.spawn_room_contents()
+
+    # Get spawned enemies
+    enemies = list(esper.get_components(Enemy, Health))
+    assert len(enemies) == 2
+
+    # Floor 3 multiplier = 1.6, scaled HP = 4 (3 * 1.6 = 4.8 → int(4.8) = 4)
+    for _, (enemy, health) in enemies:
+        assert health.max == 4  # 3 * 1.6 = 4.8 → int(4.8) = 4
+
+
+def test_boss_spawned_in_boss_room():
+    """Test boss spawned in boss room instead of regular enemies."""
+    from src.components.boss import Boss
+
+    # Create dungeon with boss room
+    dungeon = Dungeon()
+    boss_pos = (0, 0)
+    dungeon.rooms[boss_pos] = DungeonRoom(
+        position=boss_pos,
+        room_type=RoomType.BOSS,
+        doors={},
+        cleared=False
+    )
+    dungeon.start_position = boss_pos
+    dungeon.boss_position = boss_pos
+
+    esper.switch_world("main")
+    manager = RoomManager(dungeon)
+    manager.current_floor = 1  # Floor 1 = boss_a
+
+    # Spawn room contents
+    manager.spawn_room_contents()
+
+    # Should have spawned a boss
+    bosses = list(esper.get_components(Boss))
+    assert len(bosses) == 1
+
+    # Should be boss_a for floor 1
+    _, (boss,) = bosses[0]
+    assert boss.boss_type == "boss_a"
+
+
+def test_different_boss_per_floor():
+    """Test correct boss type spawned for each floor."""
+    from src.components.boss import Boss
+
+    # Test floor 1 -> boss_a
+    dungeon = Dungeon()
+    dungeon.rooms[(0, 0)] = DungeonRoom(
+        position=(0, 0),
+        room_type=RoomType.BOSS,
+        doors={},
+        cleared=False
+    )
+    dungeon.start_position = (0, 0)
+    dungeon.boss_position = (0, 0)
+
+    esper.switch_world("main")
+    manager = RoomManager(dungeon, current_floor=1)
+    manager.spawn_room_contents()
+    bosses = list(esper.get_components(Boss))
+    assert len(bosses) == 1
+    assert bosses[0][1][0].boss_type == "boss_a"
+
+    # Clear boss and test floor 2 -> boss_b
+    for entity, (boss,) in esper.get_components(Boss):
+        esper.delete_entity(entity, immediate=True)
+
+    manager.current_floor = 2
+    manager.spawn_room_contents()
+    bosses2 = list(esper.get_components(Boss))
+    assert len(bosses2) == 1
+    assert bosses2[0][1][0].boss_type == "boss_b"
+
+    # Clear boss and test floor 3 -> boss_c
+    for entity, (boss,) in esper.get_components(Boss):
+        esper.delete_entity(entity, immediate=True)
+
+    manager.current_floor = 3
+    manager.spawn_room_contents()
+    bosses3 = list(esper.get_components(Boss))
+    assert len(bosses3) == 1
+    assert bosses3[0][1][0].boss_type == "boss_c"
+
+
+def test_trapdoor_spawned_after_boss_room_clear():
+    """Test trapdoor spawns after boss room is cleared."""
+    from src.components.boss import Trapdoor
+
+    # Create boss room
+    dungeon = Dungeon()
+    boss_pos = (0, 0)
+    dungeon.rooms[boss_pos] = DungeonRoom(
+        position=boss_pos,
+        room_type=RoomType.BOSS,
+        doors={},
+        cleared=False
+    )
+    dungeon.start_position = boss_pos
+    dungeon.boss_position = boss_pos
+
+    esper.switch_world("main")
+    manager = RoomManager(dungeon)
+    manager.current_floor = 1
+
+    # Initially no trapdoor
+    trapdoors = list(esper.get_components(Trapdoor))
+    assert len(trapdoors) == 0
+
+    # Clear the room
+    manager.on_room_cleared()
+
+    # Should spawn trapdoor
+    trapdoors = list(esper.get_components(Trapdoor))
+    assert len(trapdoors) == 1
+
+    # Trapdoor should lead to next floor
+    _, (trapdoor,) = trapdoors[0]
+    assert trapdoor.next_floor == 2
+
+
+def test_trapdoor_not_spawned_in_normal_rooms():
+    """Test trapdoor only spawns in boss rooms, not combat rooms."""
+    from src.components.boss import Trapdoor
+
+    # Create normal combat room
+    dungeon = Dungeon()
+    dungeon.rooms[(0, 0)] = DungeonRoom(
+        position=(0, 0),
+        room_type=RoomType.COMBAT,
+        doors={},
+        enemies=[{"type": "chaser", "count": 1}],
+        cleared=False
+    )
+    dungeon.start_position = (0, 0)
+
+    esper.switch_world("main")
+    manager = RoomManager(dungeon)
+
+    # Clear the room
+    manager.on_room_cleared()
+
+    # Should NOT spawn trapdoor in normal room
+    trapdoors = list(esper.get_components(Trapdoor))
+    assert len(trapdoors) == 0
+
+
+def test_advance_to_next_floor():
+    """Test advancing to next floor generates new dungeon and increments floor."""
+    # Create initial dungeon
+    dungeon1 = Dungeon()
+    dungeon1.rooms[(0, 0)] = DungeonRoom(
+        position=(0, 0),
+        room_type=RoomType.START,
+        doors={}
+    )
+    dungeon1.start_position = (0, 0)
+
+    esper.switch_world("main")
+    manager = RoomManager(dungeon1)
+
+    # Should start at floor 1
+    assert manager.current_floor == 1
+    assert manager.current_position == (0, 0)
+
+    # Advance to floor 2
+    manager.advance_to_next_floor(2)
+
+    # Floor should increment
+    assert manager.current_floor == 2
+
+    # Dungeon should be regenerated (new dungeon instance)
+    assert manager.dungeon is not dungeon1
+
+    # Should be at start position of new dungeon
+    assert manager.current_position == manager.dungeon.start_position
+
+
+def test_floor_transition_clears_entities():
+    """Test floor transition removes all entities except player."""
+    from src.components.game import Player, Enemy
+    from src.entities.player import create_player
+    from src.entities.enemies import create_enemy
+
+    dungeon = Dungeon()
+    dungeon.rooms[(0, 0)] = DungeonRoom(
+        position=(0, 0),
+        room_type=RoomType.START,
+        doors={}
+    )
+    dungeon.start_position = (0, 0)
+
+    esper.switch_world("main")
+    manager = RoomManager(dungeon)
+
+    # Create player and enemies
+    player = create_player("main", 30, 10)
+    enemy1 = create_enemy("main", "chaser", 10, 10)
+    enemy2 = create_enemy("main", "shooter", 20, 15)
+
+    # Verify entities exist
+    assert len(list(esper.get_components(Player))) == 1
+    assert len(list(esper.get_components(Enemy))) == 2
+
+    # Advance floor
+    manager.advance_to_next_floor(2)
+
+    # Player should still exist
+    assert len(list(esper.get_components(Player))) == 1
+
+    # Enemies should be cleared
+    assert len(list(esper.get_components(Enemy))) == 0
+
+
 def test_revisiting_shop_keeps_state():
     """Test shop items persist when revisiting."""
     from src.components.dungeon import ShopItem, Currency

@@ -221,6 +221,23 @@ def main():
                 # Update input
                 input_handler.update()
 
+                # Check for floor transitions
+                if engine.floor_transition_system.pending_floor_transition:
+                    # Floor transition detected
+                    target_floor = engine.floor_transition_system.target_floor
+
+                    # In a full game with RoomManager integration, you would do:
+                    # room_manager.advance_to_next_floor(target_floor)
+                    # This would:
+                    # - Increment current_floor
+                    # - Generate new dungeon
+                    # - Clear entities except player
+                    # - Reset player position
+                    # - Spawn new room contents
+
+                    console.print(f"[yellow]Floor transition to floor {target_floor}![/yellow]")
+                    engine.floor_transition_system.reset_transition()
+
                 # Check for game state transitions (victory or game over)
                 current_state = engine.game_state_system.current_state
 

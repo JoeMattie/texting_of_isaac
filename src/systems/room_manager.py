@@ -1,11 +1,17 @@
 """Room manager system for handling room state and transitions."""
 import esper
-from src.game.dungeon import Dungeon, DungeonRoom, RoomType, RoomState
+from src.game.dungeon import Dungeon, DungeonRoom, RoomType, RoomState, generate_dungeon
 from src.entities.rewards import spawn_room_clear_reward as _spawn_room_clear_reward
 from src.entities.doors import spawn_door
 from src.entities.shop import create_shop_item, generate_shop_items
+from src.entities.enemies import create_enemy
+from src.entities.bosses import create_boss
+from src.entities.trapdoor import create_trapdoor
 from src.components.dungeon import Door
-from src.components.core import Sprite
+from src.components.core import Sprite, Position
+from src.components.game import Enemy, Player
+from src.components.combat import Collider
+from src.components.boss import Boss, Trapdoor
 from src.config import Config
 
 
@@ -13,22 +19,25 @@ class RoomManager(esper.Processor):
     """Manages current room state and transitions.
 
     Responsibilities:
-    - Track current room position
+    - Track current room position and floor number
     - Handle room state transitions
-    - Spawn/despawn room contents
+    - Spawn/despawn room contents (enemies, bosses, trapdoors)
     - Lock/unlock doors based on room state
+    - Handle floor transitions
     """
 
-    def __init__(self, dungeon: Dungeon):
+    def __init__(self, dungeon: Dungeon, current_floor: int = 1):
         """Initialize room manager with dungeon.
 
         Args:
             dungeon: Complete dungeon layout
+            current_floor: Current floor number (default: 1)
         """
         super().__init__()
         self.dungeon = dungeon
         self.current_position = dungeon.start_position
         self.current_room = dungeon.rooms[self.current_position]
+        self.current_floor = current_floor
 
         # Reveal start room in minimap
         self._reveal_current_room()
@@ -65,8 +74,15 @@ class RoomManager(esper.Processor):
         if self.current_room.room_type == RoomType.SHOP:
             self._spawn_shop_items()
 
+        # Spawn boss in boss room
+        if self.current_room.room_type == RoomType.BOSS and not self.current_room.cleared:
+            self._spawn_boss()
+
+        # Spawn enemies in combat rooms (if not cleared and not boss room)
+        elif self.current_room.room_type == RoomType.COMBAT and not self.current_room.cleared:
+            self._spawn_enemies()
+
         # TODO: Implement additional entity spawning in integration tasks
-        # - Spawn enemies if not cleared
         # - Spawn treasure pedestal if treasure room
 
     def _should_lock_doors(self) -> bool:
@@ -132,6 +148,10 @@ class RoomManager(esper.Processor):
         # Unlock all doors
         self.unlock_all_doors()
 
+        # Spawn trapdoor if boss room
+        if self.current_room.room_type == RoomType.BOSS:
+            self._spawn_trapdoor()
+
         # Spawn room-clear reward (implementation in integration tasks)
         self.spawn_room_clear_reward()
 
@@ -189,6 +209,124 @@ class RoomManager(esper.Processor):
         for i, item_name in enumerate(item_names):
             x_pos = spacing * (i + 1)
             create_shop_item("main", item_name, x_pos, y_pos)
+
+    def _spawn_enemies(self) -> None:
+        """Spawn enemies in current room with floor scaling."""
+        import random
+
+        # Spawn enemies based on room config
+        for enemy_config in self.current_room.enemies:
+            enemy_type = enemy_config["type"]
+            count = enemy_config["count"]
+
+            for _ in range(count):
+                # Random spawn position (avoid edges and center)
+                x = random.uniform(10, Config.ROOM_WIDTH - 10)
+                y = random.uniform(5, Config.ROOM_HEIGHT - 5)
+
+                # Avoid center spawn area
+                if abs(x - Config.ROOM_WIDTH // 2) < 10:
+                    x += 15
+
+                # Create enemy with floor scaling
+                create_enemy("main", enemy_type, x, y, floor=self.current_floor)
+
+    def _spawn_boss(self) -> None:
+        """Spawn boss in current room based on current floor."""
+        # Map floor to boss type
+        boss_types = {
+            1: "boss_a",
+            2: "boss_b",
+            3: "boss_c"
+        }
+
+        boss_type = boss_types.get(self.current_floor, "boss_a")
+
+        # Spawn boss at center of room
+        center_x = Config.ROOM_WIDTH / 2
+        center_y = Config.ROOM_HEIGHT / 2
+
+        create_boss("main", boss_type, center_x, center_y)
+
+    def _spawn_trapdoor(self) -> None:
+        """Spawn trapdoor after boss defeat."""
+        # Spawn at center of room
+        center_x = Config.ROOM_WIDTH / 2
+        center_y = Config.ROOM_HEIGHT / 2
+
+        # Next floor is current + 1
+        next_floor = self.current_floor + 1
+
+        create_trapdoor("main", center_x, center_y, next_floor)
+
+    def advance_to_next_floor(self, target_floor: int) -> None:
+        """Advance to the next floor.
+
+        This method handles transitioning to a new floor by:
+        - Incrementing current_floor
+        - Generating a new dungeon
+        - Clearing all entities except player
+        - Resetting player position
+
+        Args:
+            target_floor: The floor number to advance to
+        """
+        # Update floor number
+        self.current_floor = target_floor
+
+        # Generate new dungeon
+        self.dungeon = generate_dungeon()
+        self.current_position = self.dungeon.start_position
+        self.current_room = self.dungeon.rooms[self.current_position]
+
+        # Clear all entities except player
+        self._clear_all_entities_except_player()
+
+        # Reset player position to center of start room
+        self._reset_player_position()
+
+        # Spawn new room contents
+        self.spawn_room_contents()
+
+        # Reveal start room
+        self._reveal_current_room()
+
+    def _clear_all_entities_except_player(self) -> None:
+        """Clear all entities except the player."""
+        # Delete all enemies
+        for entity, (enemy,) in esper.get_components(Enemy):
+            esper.delete_entity(entity, immediate=True)
+
+        # Delete all doors
+        for entity, (door,) in esper.get_components(Door):
+            esper.delete_entity(entity, immediate=True)
+
+        # Delete all bosses
+        for entity, (boss,) in esper.get_components(Boss):
+            esper.delete_entity(entity, immediate=True)
+
+        # Delete all trapdoors
+        for entity, (trapdoor,) in esper.get_components(Trapdoor):
+            esper.delete_entity(entity, immediate=True)
+
+        # Delete all projectiles (if any)
+        from src.components.combat import Projectile
+        for entity, (projectile,) in esper.get_components(Projectile):
+            esper.delete_entity(entity, immediate=True)
+
+        # TODO: Clear other entities like items, rewards, etc.
+
+    def _reset_player_position(self) -> None:
+        """Reset player to center of start room."""
+        # Find player entity
+        player_entities = list(esper.get_components(Player, Position))
+
+        if player_entities:
+            player_ent, (player, pos) = player_entities[0]
+
+            # Reset to center
+            pos.x = Config.ROOM_WIDTH / 2
+            pos.y = Config.ROOM_HEIGHT / 2
 
     def process(self):
         """Process room manager (currently no per-frame logic)."""
