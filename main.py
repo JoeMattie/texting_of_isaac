@@ -15,17 +15,22 @@ from src.game.engine import GameEngine
 from src.entities.player import create_player
 from src.entities.enemies import create_enemy
 from src.config import Config
+from src.systems.boss_health_bar import BossHealthBarSystem
 
 
-def create_game_display(engine: GameEngine) -> Layout:
+def create_game_display(engine: GameEngine, boss_health_bar_system: BossHealthBarSystem) -> Layout:
     """Create a Rich display showing the game grid and HUD.
 
     Args:
         engine: The game engine
+        boss_health_bar_system: System for boss health bar display
 
     Returns:
         Rich Layout with game and HUD
     """
+    # Get boss health bar text (if boss exists)
+    boss_health_text = boss_health_bar_system.get_health_bar_text()
+
     # Get render grid from render system
     grid = engine.render_system.render(engine.world_name)
 
@@ -53,12 +58,25 @@ def create_game_display(engine: GameEngine) -> Layout:
 
     hud_panel = Panel(hud_text, title="HUD", border_style="yellow")
 
-    # Create layout
-    layout = Layout()
-    layout.split_column(
-        Layout(game_panel, size=Config.ROOM_HEIGHT + 2),
-        Layout(hud_panel, size=5)
-    )
+    # Create layout with optional boss health bar
+    if boss_health_text:
+        # Display boss health bar above the game grid
+        boss_health_display = Text(boss_health_text, style="bold red")
+        boss_panel = Panel(boss_health_display, border_style="red", padding=0)
+
+        layout = Layout()
+        layout.split_column(
+            Layout(boss_panel, size=3),
+            Layout(game_panel, size=Config.ROOM_HEIGHT + 2),
+            Layout(hud_panel, size=5)
+        )
+    else:
+        # No boss, standard layout
+        layout = Layout()
+        layout.split_column(
+            Layout(game_panel, size=Config.ROOM_HEIGHT + 2),
+            Layout(hud_panel, size=5)
+        )
 
     return layout
 
@@ -174,6 +192,9 @@ def main():
     create_enemy(engine.world_name, "shooter", 50.0, 15.0)
     create_enemy(engine.world_name, "chaser", 30.0, 3.0)
 
+    # Create boss health bar system (not registered as processor, used for display only)
+    boss_health_bar_system = BossHealthBarSystem(engine.world_name)
+
     # Create input handler
     input_handler = InputHandler()
     input_handler.start()
@@ -213,7 +234,7 @@ def main():
                 engine.update(dt)
 
                 # Render using Live display (no flashing)
-                layout = create_game_display(engine)
+                layout = create_game_display(engine, boss_health_bar_system)
                 live.update(layout, refresh=True)
 
                 # Sleep to maintain FPS
