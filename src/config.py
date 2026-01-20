@@ -100,3 +100,28 @@ class Config:
         "treasure_map": 8,
         "heart": 3,
     }
+
+    # Boss configuration
+    BOSS_HEALTH_BAR_WIDTH: int = 40
+    BOSS_PHASE_2_THRESHOLD: float = 0.5
+    BOSS_PHASE_TRANSITION_INVULN: float = 0.5  # seconds
+
+    # Boss teleport positions (8 safe spots in 60x20 arena)
+    BOSS_TELEPORT_POSITIONS: list[tuple[float, float]] = [
+        (10.0, 5.0), (50.0, 5.0), (30.0, 5.0),
+        (10.0, 15.0), (50.0, 15.0), (30.0, 15.0),
+        (20.0, 10.0), (40.0, 10.0)
+    ]
+    BOSS_TELEPORT_MIN_PLAYER_DISTANCE: float = 5.0
+
+    # Floor progression
+    FINAL_FLOOR: int = 3
+    FLOOR_HP_MULTIPLIERS: dict[int, float] = {
+        1: 1.0, 2: 1.3, 3: 1.6
+    }
+    FLOOR_DAMAGE_MULTIPLIERS: dict[int, float] = {
+        1: 1.0, 2: 1.2, 3: 1.5
+    }
+    FLOOR_ENEMY_COUNT_RANGES: dict[int, tuple[int, int]] = {
+        1: (3, 5), 2: (4, 6), 3: (5, 7)
+    }

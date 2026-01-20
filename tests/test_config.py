@@ -130,6 +130,15 @@ def test_no_constants_are_none():
     assert Config.SHOP_ITEMS_MAX is not None
     assert Config.SHOP_ITEM_PRICES is not None
     assert Config.EXPLOSIVE_TEAR_DAMAGE_MULTIPLIER is not None
+    assert Config.BOSS_HEALTH_BAR_WIDTH is not None
+    assert Config.BOSS_PHASE_2_THRESHOLD is not None
+    assert Config.BOSS_PHASE_TRANSITION_INVULN is not None
+    assert Config.BOSS_TELEPORT_POSITIONS is not None
+    assert Config.BOSS_TELEPORT_MIN_PLAYER_DISTANCE is not None
+    assert Config.FINAL_FLOOR is not None
+    assert Config.FLOOR_HP_MULTIPLIERS is not None
+    assert Config.FLOOR_DAMAGE_MULTIPLIERS is not None
+    assert Config.FLOOR_ENEMY_COUNT_RANGES is not None
 
 
 def test_integer_constants_are_integers():
@@ -153,6 +162,8 @@ def test_integer_constants_are_integers():
     assert isinstance(Config.MINIMAP_DISPLAY_RADIUS, int)
     assert isinstance(Config.SHOP_ITEMS_MIN, int)
     assert isinstance(Config.SHOP_ITEMS_MAX, int)
+    assert isinstance(Config.BOSS_HEALTH_BAR_WIDTH, int)
+    assert isinstance(Config.FINAL_FLOOR, int)
 
 
 def test_float_constants_are_numeric():
@@ -175,6 +186,9 @@ def test_float_constants_are_numeric():
     assert isinstance(Config.BOMB_BLAST_RADIUS, (int, float))
     assert isinstance(Config.BOMB_DAMAGE, (int, float))
     assert isinstance(Config.EXPLOSIVE_TEAR_DAMAGE_MULTIPLIER, (int, float))
+    assert isinstance(Config.BOSS_PHASE_2_THRESHOLD, (int, float))
+    assert isinstance(Config.BOSS_PHASE_TRANSITION_INVULN, (int, float))
+    assert isinstance(Config.BOSS_TELEPORT_MIN_PLAYER_DISTANCE, (int, float))
 
 
 def test_item_drop_chance_is_probability():
@@ -337,3 +351,37 @@ def test_explosive_tears_in_shop_prices():
     assert Config.SHOP_ITEM_PRICES["explosive_tears"] > 0
     # Expensive tier (same as magic_mushroom)
     assert Config.SHOP_ITEM_PRICES["explosive_tears"] >= 15
+
+
+def test_boss_config_constants():
+    """Test boss-related config constants exist."""
+    from src.config import Config
+
+    assert hasattr(Config, 'BOSS_HEALTH_BAR_WIDTH')
+    assert hasattr(Config, 'BOSS_PHASE_2_THRESHOLD')
+    assert hasattr(Config, 'BOSS_PHASE_TRANSITION_INVULN')
+    assert hasattr(Config, 'BOSS_TELEPORT_POSITIONS')
+    assert hasattr(Config, 'BOSS_TELEPORT_MIN_PLAYER_DISTANCE')
+
+    assert Config.BOSS_HEALTH_BAR_WIDTH == 40
+    assert Config.BOSS_PHASE_2_THRESHOLD == 0.5
+    assert Config.BOSS_PHASE_TRANSITION_INVULN == 0.5
+    assert Config.BOSS_TELEPORT_MIN_PLAYER_DISTANCE == 5.0
+    assert isinstance(Config.BOSS_TELEPORT_POSITIONS, list)
+    assert len(Config.BOSS_TELEPORT_POSITIONS) == 8
+
+
+def test_floor_config_constants():
+    """Test floor-related config constants exist."""
+    from src.config import Config
+
+    assert hasattr(Config, 'FINAL_FLOOR')
+    assert hasattr(Config, 'FLOOR_HP_MULTIPLIERS')
+    assert hasattr(Config, 'FLOOR_DAMAGE_MULTIPLIERS')
+    assert hasattr(Config, 'FLOOR_ENEMY_COUNT_RANGES')
+
+    assert Config.FINAL_FLOOR == 3
+    assert Config.FLOOR_HP_MULTIPLIERS[1] == 1.0
+    assert Config.FLOOR_HP_MULTIPLIERS[2] == 1.3
+    assert Config.FLOOR_DAMAGE_MULTIPLIERS[1] == 1.0
+    assert Config.FLOOR_ENEMY_COUNT_RANGES[1] == (3, 5)
