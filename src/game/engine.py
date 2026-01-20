@@ -14,6 +14,7 @@ from src.systems.homing import HomingSystem
 from src.systems.collision import CollisionSystem
 from src.systems.invincibility import InvincibilitySystem
 from src.systems.item_pickup import ItemPickupSystem
+from src.systems.floor_transition import FloorTransitionSystem
 from src.systems.render import RenderSystem
 from src.systems.minimap_system import MiniMapSystem
 
@@ -78,6 +79,9 @@ class GameEngine:
 
         self.item_pickup_system = ItemPickupSystem()
         self.world.add_processor(self.item_pickup_system, priority=6.5)
+
+        self.floor_transition_system = FloorTransitionSystem()
+        self.world.add_processor(self.floor_transition_system, priority=6.6)
 
         # Create minimap system
         minimap_system = MiniMapSystem()
