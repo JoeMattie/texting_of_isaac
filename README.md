@@ -2,9 +2,9 @@
 
 A TUI (Terminal User Interface) roguelike game inspired by The Binding of Isaac, built with Python using an Entity Component System architecture.
 
-![Version](https://img.shields.io/badge/version-0.1.0--alpha-orange)
+![Version](https://img.shields.io/badge/version-0.2.0--alpha-orange)
 ![Python](https://img.shields.io/badge/python-3.12%2B-blue)
-![Tests](https://img.shields.io/badge/tests-328%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-424%20passing-brightgreen)
 
 ## 🎮 What is This?
 
@@ -40,13 +40,17 @@ Texting of Isaac is a bullet-hell roguelike rendered entirely in ASCII/Unicode c
 - **Shop System** - Purchase items with coins in shop rooms
 - **Minimap** - Track visited rooms and navigate the dungeon
 - **Room Clear Rewards** - Earn coins, hearts, stat boosts, or bombs after clearing combat rooms
-- **Comprehensive Tests** - 328 unit tests ensuring code quality
+- **Explosive Tears** - Special effect that creates explosions on projectile impact
+- **Boss Fights** - Three unique bosses with multi-phase combat and geometric attack patterns
+- **Multiple Floors** - Progress through 3 floors with increasing difficulty and scaling
+- **Game State Management** - Victory and game over screens with proper terminal states
+- **Win/Loss Conditions** - Beat all 3 floors to win, or lose when HP reaches 0
+- **Comprehensive Tests** - 424 unit tests ensuring code quality
 
 ### 🚧 In Progress / Planned
-- Boss fights and mini-boss encounters
-- Game state management (menu, pause, game over)
-- Win/loss conditions
-- Additional special effects (explosive shots, etc.)
+- Menu system and pause functionality
+- Additional items and special effects
+- Sound effects (if terminal audio is feasible)
 
 ## 🚀 Installation
 
@@ -81,7 +85,7 @@ uv run python main.py
 - **Q** - Quit game
 
 ### Objective
-Clear rooms filled with enemies, collect coins and items, purchase upgrades in shops, and navigate through the procedurally generated dungeon. Defeat all enemies in a room to unlock doors and progress deeper into the dungeon.
+Clear rooms filled with enemies, collect coins and items, purchase upgrades in shops, and navigate through the procedurally generated dungeon. Defeat all enemies in a room to unlock doors, defeat floor bosses to advance, and survive all 3 floors to achieve victory!
 
 ### Tips
 - Keep moving! Enemies will chase you
@@ -93,6 +97,8 @@ Clear rooms filled with enemies, collect coins and items, purchase upgrades in s
 - Use bombs (E key) to damage multiple enemies or reveal secret rooms
 - Check the minimap to navigate the dungeon
 - Doors lock during combat - clear all enemies to proceed
+- Boss fights feature multi-phase combat - watch for pattern changes at 50% HP
+- Defeat the floor boss to spawn a trapdoor (▼) that leads to the next floor
 
 ## 🏗️ Project Structure
 
@@ -105,7 +111,8 @@ texting_of_isaac/
 │   │   ├── combat.py      # Stats, Collider, Projectile, Homing
 │   │   ├── game.py        # Player, Enemy, Item, AI, Invincible, CollectedItems
 │   │   ├── dungeon.py     # DungeonPosition, Door, Currency, ShopItem
-│   │   └── currency.py    # Coins, Bombs
+│   │   ├── currency.py    # Coins, Bombs
+│   │   └── boss.py        # Boss, BossAI, Trapdoor
 │   ├── systems/           # ECS systems (game logic)
 │   │   ├── input.py       # Player input handling
 │   │   ├── movement.py    # Physics and movement
@@ -119,10 +126,17 @@ texting_of_isaac/
 │   │   ├── bomb.py        # Bomb placement and explosions
 │   │   ├── room_manager.py # Room transitions and spawning
 │   │   ├── minimap_system.py # Minimap rendering
+│   │   ├── boss_ai.py     # Boss behavior and patterns
+│   │   ├── boss_patterns.py # Geometric attack pattern generation
+│   │   ├── boss_health_bar.py # Boss health bar rendering
+│   │   ├── floor_transition.py # Floor progression system
+│   │   ├── game_state.py  # Victory/defeat state management
 │   │   └── render.py      # Grid-based rendering
 │   ├── entities/          # Entity factory functions
 │   │   ├── player.py      # Player entity creation
 │   │   ├── enemies.py     # Enemy entity creation (5 types)
+│   │   ├── bosses.py      # Boss entity creation (3 types)
+│   │   ├── trapdoor.py    # Trapdoor (floor exit) creation
 │   │   ├── items.py       # Item pickup creation
 │   │   ├── shop.py        # Shop item creation
 │   │   ├── currency.py    # Coin and bomb pickup creation
@@ -130,6 +144,7 @@ texting_of_isaac/
 │   │   └── rewards.py     # Room clear reward spawning
 │   ├── game/              # Game management
 │   │   ├── engine.py      # Main game engine & ECS world
+│   │   ├── state.py       # Game state enum (PLAYING, VICTORY, GAME_OVER)
 │   │   ├── room.py        # Room generation & management
 │   │   └── dungeon.py     # Procedural dungeon generation
 │   ├── data/              # Game data and definitions
@@ -189,6 +204,7 @@ Benefits:
 | `T` | Turret enemy |
 | `O` | Orbiter enemy |
 | `E` | Tank enemy |
+| `A/B/C` | Boss (unique per floor) |
 | `.` | Projectile (yours) |
 | `*` | Enemy projectile |
 | `○` | Obstacle |
@@ -198,12 +214,12 @@ Benefits:
 | `B` | Bomb pickup |
 | `I` | Item pickup |
 | `D` | Door (locked/unlocked) |
+| `▼` | Trapdoor (floor exit) |
 
 ## 🐛 Known Issues
 
 - Projectiles can go off-screen indefinitely (limited to 200 max)
-- No boss fights or mini-boss encounters yet
-- No game over or win conditions
+- No pause menu or settings menu yet
 
 ## 🤝 Contributing
 
@@ -242,11 +258,12 @@ This project is open source and available under the MIT License.
 - [x] Minimap navigation
 - [x] Room clear rewards
 
-**Phase 3: Content**
-- [ ] Boss fights
+**Phase 3: Content** ✅ (Complete)
+- [x] Boss fights with 3 unique bosses
+- [x] Multiple floors (3 floors with scaling difficulty)
+- [x] Explosive tears special effect
 - [ ] More enemy types
-- [ ] More items (targeting 12-15)
-- [ ] Multiple floors
+- [ ] More items (targeting 12-15 total)
 
 **Phase 4: Polish**
 - [ ] Sound effects
@@ -257,6 +274,6 @@ This project is open source and available under the MIT License.
 
 ---
 
-**Status**: Early Alpha - Core foundation complete, gameplay in progress
+**Status**: Alpha - Core gameplay complete with boss fights and floor progression
 
 **Play it now**: `uv run python main.py`
