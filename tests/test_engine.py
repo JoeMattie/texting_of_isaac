@@ -106,7 +106,7 @@ def test_engine_connects_render_to_item_pickup():
 
 def test_game_state_enum_exists():
     """Test GameState enum has all required states."""
-    from src.game.engine import GameState
+    from src.game.state import GameState
 
     assert hasattr(GameState, 'PLAYING')
     assert hasattr(GameState, 'BOSS_FIGHT')

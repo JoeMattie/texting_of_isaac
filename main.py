@@ -12,6 +12,7 @@ from rich.layout import Layout
 from rich.text import Text
 
 from src.game.engine import GameEngine
+from src.game.state import GameState
 from src.entities.player import create_player
 from src.entities.enemies import create_enemy
 from src.config import Config
@@ -220,22 +221,36 @@ def main():
                 # Update input
                 input_handler.update()
 
-                # Set input on systems
-                engine.input_system.set_input(
-                    input_handler.move_x,
-                    input_handler.move_y,
-                    input_handler.shoot_x,
-                    input_handler.shoot_y
-                )
-                engine.shooting_system.shoot_x = input_handler.shoot_x
-                engine.shooting_system.shoot_y = input_handler.shoot_y
+                # Check for game state transitions (victory or game over)
+                current_state = engine.game_state_system.current_state
 
-                # Update game
-                engine.update(dt)
+                if current_state in (GameState.VICTORY, GameState.GAME_OVER):
+                    # Display state screen
+                    state_text = engine.game_state_system.get_state_screen_text()
+                    state_panel = Panel(
+                        Text(state_text, style="bold yellow" if current_state == GameState.VICTORY else "bold red"),
+                        border_style="yellow" if current_state == GameState.VICTORY else "red",
+                        padding=1
+                    )
+                    live.update(state_panel, refresh=True)
+                else:
+                    # Normal gameplay
+                    # Set input on systems
+                    engine.input_system.set_input(
+                        input_handler.move_x,
+                        input_handler.move_y,
+                        input_handler.shoot_x,
+                        input_handler.shoot_y
+                    )
+                    engine.shooting_system.shoot_x = input_handler.shoot_x
+                    engine.shooting_system.shoot_y = input_handler.shoot_y
 
-                # Render using Live display (no flashing)
-                layout = create_game_display(engine, boss_health_bar_system)
-                live.update(layout, refresh=True)
+                    # Update game
+                    engine.update(dt)
+
+                    # Render using Live display (no flashing)
+                    layout = create_game_display(engine, boss_health_bar_system)
+                    live.update(layout, refresh=True)
 
                 # Sleep to maintain FPS
                 elapsed = time.time() - current_time

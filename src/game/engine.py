@@ -1,7 +1,6 @@
 """Main game engine and loop."""
-from enum import Enum
-
 import esper
+from src.game.state import GameState
 from src.config import Config
 from src.systems.input import InputSystem
 from src.systems.movement import MovementSystem
@@ -17,15 +16,7 @@ from src.systems.item_pickup import ItemPickupSystem
 from src.systems.floor_transition import FloorTransitionSystem
 from src.systems.render import RenderSystem
 from src.systems.minimap_system import MiniMapSystem
-
-
-class GameState(Enum):
-    """Game state management."""
-    PLAYING = "playing"
-    BOSS_FIGHT = "boss_fight"
-    FLOOR_TRANSITION = "floor_transition"
-    VICTORY = "victory"
-    GAME_OVER = "game_over"
+from src.systems.game_state import GameStateSystem
 
 
 class GameEngine:
@@ -94,6 +85,10 @@ class GameEngine:
         )
         self.world.add_processor(self.render_system, priority=7)
 
+        # Create game state system (last, after render)
+        self.game_state_system = GameStateSystem(self.floor_transition_system)
+        self.world.add_processor(self.game_state_system, priority=8)
+
     def update(self, dt: float):
         """Update all systems.
 
@@ -120,3 +115,11 @@ class GameEngine:
     def stop(self):
         """Stop the game engine."""
         self.running = False
+
+    def is_game_paused(self) -> bool:
+        """Check if the game is paused due to game state.
+
+        Returns:
+            True if game is in VICTORY or GAME_OVER state, False otherwise
+        """
+        return self.game_state_system.current_state in (GameState.VICTORY, GameState.GAME_OVER)
