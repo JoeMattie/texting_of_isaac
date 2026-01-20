@@ -8,6 +8,7 @@ from src.systems.movement import MovementSystem
 from src.systems.shooting import ShootingSystem
 from src.systems.bomb import BombSystem
 from src.systems.ai import AISystem
+from src.systems.boss_ai import BossAISystem
 from src.systems.enemy_shooting import EnemyShootingSystem
 from src.systems.homing import HomingSystem
 from src.systems.collision import CollisionSystem
@@ -50,6 +51,9 @@ class GameEngine:
 
         self.ai_system = AISystem()
         self.world.add_processor(self.ai_system, priority=1)
+
+        self.boss_ai_system = BossAISystem()
+        self.world.add_processor(self.boss_ai_system, priority=1.5)
 
         self.enemy_shooting_system = EnemyShootingSystem()
         self.world.add_processor(self.enemy_shooting_system, priority=2)
@@ -99,6 +103,7 @@ class GameEngine:
         self.shooting_system.dt = dt
         self.bomb_system.dt = dt
         self.ai_system.dt = dt
+        self.boss_ai_system.dt = dt
         self.enemy_shooting_system.dt = dt
         self.homing_system.dt = dt
         self.invincibility_system.dt = dt
