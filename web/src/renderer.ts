@@ -82,4 +82,23 @@ export class GameRenderer {
         }
         this.entitySprites.clear();
     }
+
+    /**
+     * Get all entity sprites for animation.
+     * @returns Map of entity ID to sprite
+     */
+    getEntitySprites(): Map<number, PIXI.Sprite> {
+        return this.entitySprites;
+    }
+
+    /**
+     * Get entity type for a given entity ID.
+     * @param entityId - Entity ID
+     * @param gameState - Current game state
+     * @returns Entity type or 'unknown'
+     */
+    getEntityType(entityId: number, gameState: GameState): string {
+        const entity = gameState.entities.find(e => e.id === entityId);
+        return entity?.type || 'unknown';
+    }
 }
