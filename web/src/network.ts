@@ -185,9 +185,42 @@ export class NetworkClient {
 
     /**
      * Request list of active sessions for spectating.
+     * Only works if already connected.
      */
     requestSessionList(): void {
         this.send({ type: 'list_sessions' });
+    }
+
+    /**
+     * Fetch list of active sessions without maintaining a connection.
+     * Opens a temporary WebSocket, sends list_sessions, receives response, closes.
+     */
+    fetchSessionList(): void {
+        const ws = new WebSocket(this.url);
+
+        ws.onopen = () => {
+            ws.send(JSON.stringify({ type: 'list_sessions' }));
+        };
+
+        ws.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.type === 'session_list') {
+                    this.handlers.onSessionList?.(data.sessions);
+                }
+            } catch (error) {
+                this.handlers.onError?.('Invalid session list response');
+            }
+            // Server closes connection after sending list
+        };
+
+        ws.onerror = () => {
+            this.handlers.onError?.('Failed to fetch session list');
+        };
+
+        ws.onclose = () => {
+            // Expected - server closes after sending list
+        };
     }
 
     /**

@@ -73,9 +73,7 @@ async function main() {
             uiManager.showGame(false);
         },
         onSpectate: () => {
-            // TODO: Need to implement session listing via separate API endpoint
-            // For now, show empty list - spectate feature not fully implemented
-            uiManager.showSessionList([]);
+            networkClient.fetchSessionList();
         },
         onJoinSession: (sessionId: string) => {
             networkClient.connect('spectator', sessionId);
