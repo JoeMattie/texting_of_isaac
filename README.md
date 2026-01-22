@@ -2,13 +2,15 @@
 
 A TUI (Terminal User Interface) roguelike game inspired by The Binding of Isaac, built with Python using an Entity Component System architecture.
 
-![Version](https://img.shields.io/badge/version-0.2.0--alpha-orange)
+![Version](https://img.shields.io/badge/version-0.3.0--alpha-orange)
 ![Python](https://img.shields.io/badge/python-3.12%2B-blue)
-![Tests](https://img.shields.io/badge/tests-424%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-448%20passing-brightgreen)
 
 ## 🎮 What is This?
 
 Texting of Isaac is a bullet-hell roguelike rendered entirely in ASCII/Unicode characters in your terminal. Fight enemies, dodge projectiles, and survive in a procedurally generated dungeon—all from the comfort of your command line.
+
+**NEW: Web Frontend Available!** Play in your browser with real-time multiplayer support and sprite-based graphics powered by Pixi.js. See the [Web Frontend](#-web-frontend) section below.
 
 ## ✨ Current Features
 
@@ -45,7 +47,17 @@ Texting of Isaac is a bullet-hell roguelike rendered entirely in ASCII/Unicode c
 - **Multiple Floors** - Progress through 3 floors with increasing difficulty and scaling
 - **Game State Management** - Victory and game over screens with proper terminal states
 - **Win/Loss Conditions** - Beat all 3 floors to win, or lose when HP reaches 0
-- **Comprehensive Tests** - 424 unit tests ensuring code quality
+- **Comprehensive Tests** - 448 unit tests ensuring code quality
+- **Web Frontend** - Play in browser with Pixi.js rendering and WebSocket multiplayer
+
+### 🌐 Web Frontend Features
+- **Real-time Multiplayer** - Player + spectator support via WebSocket
+- **Pixi.js Rendering** - Hardware-accelerated WebGL graphics (60 FPS frontend)
+- **Sprite System** - Placeholder colored sprites (ready for pixel art integration)
+- **Network Client** - Automatic reconnection with exponential backoff
+- **UI Overlay** - Health, coins, bombs, and items display
+- **Keyboard Controls** - WASD for movement, arrow keys for shooting
+- **Production Ready** - Full deployment configuration and documentation
 
 ### 🚧 In Progress / Planned
 - Menu system and pause functionality
@@ -100,12 +112,65 @@ Clear rooms filled with enemies, collect coins and items, purchase upgrades in s
 - Boss fights feature multi-phase combat - watch for pattern changes at 50% HP
 - Defeat the floor boss to spawn a trapdoor (▼) that leads to the next floor
 
+## 🌐 Web Frontend
+
+Play Texting of Isaac in your browser with real-time multiplayer support!
+
+### Setup
+
+1. Install frontend dependencies:
+```bash
+cd web
+npm install
+```
+
+### Running the Web Version
+
+You'll need **two terminal windows**:
+
+**Terminal 1 - Start the game server:**
+```bash
+# From project root
+uv run python -m src.web.server
+```
+
+**Terminal 2 - Start the frontend:**
+```bash
+cd web
+npm run dev
+```
+
+Then open your browser to `http://localhost:3000`
+
+### Web Controls
+- **WASD** - Move player
+- **Arrow Keys** - Shoot projectiles
+- **E** - Place bomb
+- **Space** - Use item (if applicable)
+
+### Features
+- Real-time game state synchronization at 30 FPS
+- Hardware-accelerated rendering with Pixi.js
+- Spectator mode support (multiple viewers per game)
+- Automatic reconnection on disconnect
+- Production deployment ready
+
+### Documentation
+- **[RUN_DEMO.md](RUN_DEMO.md)** - Complete testing guide with 11 test scenarios
+- **[DEPLOY.md](DEPLOY.md)** - Production deployment instructions
+- **[ASSETS.md](ASSETS.md)** - Sprite asset pipeline documentation
+
 ## 🏗️ Project Structure
 
 ```
 texting_of_isaac/
-├── main.py                 # Game entry point and main loop
+├── main.py                 # Terminal game entry point
 ├── src/
+│   ├── web/                # Web frontend backend
+│   │   ├── __main__.py    # WebSocket server entry point
+│   │   ├── server.py      # WebSocket server and game loop
+│   │   ├── session_manager.py # Multi-session management
+│   │   └── protocol.py    # Message types and serialization
 │   ├── components/         # ECS components (data containers)
 │   │   ├── core.py        # Position, Velocity, Health, Sprite
 │   │   ├── combat.py      # Stats, Collider, Projectile, Homing
@@ -150,9 +215,23 @@ texting_of_isaac/
 │   ├── data/              # Game data and definitions
 │   │   └── items.py       # Item definitions and effects
 │   └── config.py          # Game constants and configuration
-├── tests/                 # Unit tests (328 tests)
-└── docs/
-    └── plans/             # Design documents
+├── web/                   # Web frontend (Pixi.js + TypeScript)
+│   ├── src/
+│   │   ├── main.ts        # Frontend entry point
+│   │   ├── network.ts     # WebSocket client
+│   │   ├── sprites.ts     # Sprite manager
+│   │   ├── renderer.ts    # Pixi.js game renderer
+│   │   └── ui.ts          # UI overlay manager
+│   ├── index.html         # HTML entry point
+│   ├── package.json       # npm dependencies
+│   ├── tsconfig.json      # TypeScript configuration
+│   └── vite.config.js     # Vite build configuration
+├── tests/                 # Unit tests (448 tests)
+├── docs/
+│   └── plans/             # Design documents
+├── RUN_DEMO.md            # Web frontend testing guide
+├── DEPLOY.md              # Production deployment guide
+└── ASSETS.md              # Sprite asset pipeline docs
 ```
 
 ## 🛠️ Development
@@ -175,10 +254,19 @@ All code includes:
 - Unit test coverage
 
 ### Tech Stack
+
+**Terminal Version:**
 - **Python 3.12+** - Core language
 - **Esper** - Entity Component System framework
 - **Rich** - Terminal UI rendering and styling
 - **Pytest** - Testing framework
+
+**Web Version:**
+- **Python WebSocket Server** - Real-time game state broadcasting
+- **TypeScript** - Type-safe frontend code
+- **Pixi.js v8** - Hardware-accelerated WebGL rendering
+- **Vite** - Fast frontend build tool with HMR
+- **WebSockets** - Real-time bidirectional communication
 
 ## 📊 Architecture
 
@@ -265,15 +353,30 @@ This project is open source and available under the MIT License.
 - [ ] More enemy types
 - [ ] More items (targeting 12-15 total)
 
-**Phase 4: Polish**
-- [ ] Sound effects
-- [ ] Visual effects
+**Phase 4: Web Frontend** ✅ (Complete)
+- [x] Python WebSocket server with session management
+- [x] Pixi.js frontend with sprite rendering
+- [x] Network client with reconnection
+- [x] UI overlay (health, coins, items)
+- [x] Keyboard input handling
+- [x] Spectator mode support
+- [x] Production deployment configuration
+- [x] Comprehensive documentation
+- [ ] Real pixel art sprites (placeholder colored rectangles)
+- [ ] Sprite animations
+- [ ] Visual effects (particles, screen shake)
+- [ ] Sound integration
+
+**Phase 5: Polish**
 - [ ] Menu system
 - [ ] Save/load
 - [ ] High scores
+- [ ] Leaderboards
 
 ---
 
-**Status**: Alpha - Core gameplay complete with boss fights and floor progression
+**Status**: Alpha - Core gameplay complete with web frontend
 
-**Play it now**: `uv run python main.py`
+**Play it now**:
+- Terminal: `uv run python main.py`
+- Web: See [Web Frontend](#-web-frontend) section
