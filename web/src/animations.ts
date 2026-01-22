@@ -122,3 +122,15 @@ export const ANIMATION_CONFIGS: Partial<Record<EntityType, AnimationConfig>> = {
 export function calculateBobOffset(elapsed: number, config: BobConfig): number {
   return config.amplitude * Math.sin(elapsed * config.frequency * 2 * Math.PI);
 }
+
+/**
+ * Calculate scale for pulse animation at given time.
+ * @param elapsed - Time in seconds
+ * @param config - Pulse configuration
+ * @returns Scale factor
+ */
+export function calculatePulseScale(elapsed: number, config: PulseConfig): number {
+  const midpoint = (config.minScale + config.maxScale) / 2;
+  const amplitude = (config.maxScale - config.minScale) / 2;
+  return midpoint + amplitude * Math.sin(elapsed * config.frequency * 2 * Math.PI);
+}

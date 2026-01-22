@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { ANIMATION_CONFIGS, EntityType, calculateBobOffset } from '../animations';
+import {
+  ANIMATION_CONFIGS,
+  EntityType,
+  calculateBobOffset,
+  calculatePulseScale
+} from '../animations';
 
 describe('Animation Configs', () => {
   it('should have config for player', () => {
@@ -53,5 +58,34 @@ describe('calculateBobOffset', () => {
     const fullPeriod = 1 / frequency;
     const offset = calculateBobOffset(fullPeriod, { amplitude: 5, frequency });
     expect(offset).toBeCloseTo(0, 5);
+  });
+});
+
+describe('calculatePulseScale', () => {
+  it('should return midpoint scale at time 0', () => {
+    const scale = calculatePulseScale(0, { minScale: 1.0, maxScale: 1.2, frequency: 2 });
+    // sin(0) = 0, so scale = midpoint = 1.1
+    expect(scale).toBeCloseTo(1.1, 5);
+  });
+
+  it('should return maxScale at quarter period', () => {
+    const frequency = 2;
+    const quarterPeriod = 1 / (4 * frequency);
+    const scale = calculatePulseScale(quarterPeriod, { minScale: 1.0, maxScale: 1.2, frequency });
+    expect(scale).toBeCloseTo(1.2, 5);
+  });
+
+  it('should return minScale at 3/4 period', () => {
+    const frequency = 2;
+    const threeQuarterPeriod = 3 / (4 * frequency);
+    const scale = calculatePulseScale(threeQuarterPeriod, { minScale: 1.0, maxScale: 1.2, frequency });
+    expect(scale).toBeCloseTo(1.0, 5);
+  });
+
+  it('should handle asymmetric min/max', () => {
+    const frequency = 1;
+    const quarterPeriod = 0.25;
+    const scale = calculatePulseScale(quarterPeriod, { minScale: 0.8, maxScale: 1.2, frequency });
+    expect(scale).toBeCloseTo(1.2, 5);
   });
 });
