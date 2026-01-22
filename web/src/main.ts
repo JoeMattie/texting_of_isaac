@@ -7,6 +7,7 @@ import { GameRenderer } from './renderer';
 import { UIManager } from './ui';
 import { AnimationManager, EntityType } from './animations';
 import { InterpolationManager } from './interpolation';
+import { ParticleManager } from './particles';
 
 async function main() {
     console.log('Texting of Isaac - Web Edition');
@@ -48,6 +49,11 @@ async function main() {
     // Initialize interpolation manager
     const interpolationManager = new InterpolationManager();
 
+    // Initialize particle manager
+    const particleContainer = new PIXI.Container();
+    app.stage.addChild(particleContainer);
+    const particleManager = new ParticleManager(particleContainer);
+
     // Initialize UI manager
     const uiManager = new UIManager();
 
@@ -73,7 +79,7 @@ async function main() {
 
             // Detect state changes for triggered animations
             if (previousState) {
-                detectStateChanges(previousState, state, animationManager, interpolationManager);
+                detectStateChanges(previousState, state, animationManager, interpolationManager, particleManager);
             }
             previousState = state;
 
@@ -106,6 +112,7 @@ async function main() {
         const dt = ticker.deltaMS / 1000;
         animationManager.update(dt);
         interpolationManager.update(dt);
+        particleManager.update(dt);
 
         // Apply interpolated positions to sprites
         const sprites = renderer.getEntitySprites();
@@ -114,6 +121,18 @@ async function main() {
             if (pos) {
                 sprite.x = pos.currentX;
                 sprite.y = pos.currentY;
+            }
+        }
+
+        // Spawn trails for projectiles
+        if (previousState) {
+            for (const entity of previousState.entities) {
+                if (entity.type === 'projectile' || entity.type === 'enemy_projectile') {
+                    const pos = interpolationManager.getPosition(entity.id);
+                    if (pos) {
+                        particleManager.spawnTrail(pos.currentX, pos.currentY, entity.type);
+                    }
+                }
             }
         }
     });
@@ -147,7 +166,8 @@ function detectStateChanges(
     prev: GameState,
     curr: GameState,
     animationManager: AnimationManager,
-    interpolationManager: InterpolationManager
+    interpolationManager: InterpolationManager,
+    particleManager: ParticleManager
 ): void {
     // Detect player hit
     if (prev.player && curr.player) {
@@ -179,10 +199,23 @@ function detectStateChanges(
         }
     }
 
-    // Clean up removed entities
+    // Detect deaths and spawn effects
     const currIds = new Set(curr.entities.map(e => e.id));
     for (const prevEntity of prev.entities) {
         if (!currIds.has(prevEntity.id)) {
+            const pos = interpolationManager.getPosition(prevEntity.id);
+
+            // Enemy death = explosion
+            if (prevEntity.type.startsWith('enemy_') && pos) {
+                particleManager.spawnExplosion(pos.currentX, pos.currentY, prevEntity.type);
+            }
+
+            // Item pickup = sparkle
+            if (['heart', 'coin', 'bomb', 'item'].includes(prevEntity.type) && pos) {
+                particleManager.spawnSparkle(pos.currentX, pos.currentY);
+            }
+
+            // Cleanup
             animationManager.removeEntity(prevEntity.id);
             interpolationManager.removeEntity(prevEntity.id);
         }
