@@ -199,6 +199,23 @@ function detectStateChanges(
         }
     }
 
+    // Detect room cleared (doors unlock)
+    // Check if enemies existed before but none now
+    const prevEnemies = prev.entities.filter(e => e.type.startsWith('enemy_')).length;
+    const currEnemies = curr.entities.filter(e => e.type.startsWith('enemy_')).length;
+
+    if (prevEnemies > 0 && currEnemies === 0) {
+        // Room just cleared - shimmer all doors
+        for (const entity of curr.entities) {
+            if (entity.type === 'door') {
+                const pos = interpolationManager.getPosition(entity.id);
+                if (pos) {
+                    particleManager.spawnShimmer(pos.currentX, pos.currentY);
+                }
+            }
+        }
+    }
+
     // Detect deaths and spawn effects
     const currIds = new Set(curr.entities.map(e => e.id));
     for (const prevEntity of prev.entities) {
