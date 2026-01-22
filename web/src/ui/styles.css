@@ -1,0 +1,45 @@
+/* Retro game UI styles */
+
+:root {
+  --pixel-font: 'Press Start 2P', monospace;
+  --color-red: #ff0000;
+  --color-gold: #ffcc00;
+  --color-white: #ffffff;
+  --color-gray: #666666;
+  --color-dark: #111111;
+  --color-bg: rgba(0, 0, 0, 0.9);
+  --border-pixel: 2px solid var(--color-white);
+}
+
+.pixel-text {
+  font-family: var(--pixel-font);
+  image-rendering: pixelated;
+}
+
+.pixel-border {
+  border: var(--border-pixel);
+  box-shadow:
+    inset -2px -2px 0 var(--color-gray),
+    inset 2px 2px 0 var(--color-white);
+}
+
+.scanlines {
+  position: relative;
+}
+
+.scanlines::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.1) 0px,
+    rgba(0, 0, 0, 0.1) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+}

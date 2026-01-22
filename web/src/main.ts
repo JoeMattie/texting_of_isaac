@@ -1,5 +1,6 @@
 // web/src/main.ts
 
+import './ui/styles.css';
 import * as PIXI from 'pixi.js';
 import { NetworkClient, GameState } from './network';
 import { SpriteManager } from './sprites';
