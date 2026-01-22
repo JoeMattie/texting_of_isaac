@@ -60,6 +60,10 @@ export interface GameState {
             components: Record<string, any>;
         }>;
     };
+    session?: {
+        floor: number;
+        spectatorCount: number;
+    };
 }
 
 /**

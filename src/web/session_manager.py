@@ -25,6 +25,8 @@ class GameSession:
         self.engine: Optional[GameEngine] = None
         # Track currently pressed keys
         self.pressed_keys: Set[str] = set()
+        # Floor progression (for future expansion)
+        self.current_floor: int = 1
 
     async def initialize_game(self):
         """Initialize the game engine for this session."""
@@ -86,21 +88,26 @@ class GameSession:
     def get_game_state(self) -> dict:
         """Export current game state as JSON-serializable dict."""
         if self.engine:
-            return export_game_state(self.world_name)
+            state = export_game_state(self.world_name)
+            # Add session metadata
+            state['session'] = {
+                'floor': self.current_floor,
+                'spectatorCount': len(self.spectator_clients)
+            }
+            return state
         return {}
 
     def get_session_info(self) -> dict:
         """Get session info for listing."""
         state = self.get_game_state()
         player_health = 3  # default
-        floor = 1
         if state and state.get('player'):
             health = state['player'].get('components', {}).get('health', {})
             player_health = health.get('current', 3)
         return {
             'sessionId': self.session_id,
             'playerHealth': player_health,
-            'floor': floor,
+            'floor': self.current_floor,
             'spectatorCount': len(self.spectator_clients)
         }
 

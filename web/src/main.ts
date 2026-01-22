@@ -118,7 +118,7 @@ async function main() {
                     coins: state.ui.currency.coins,
                     bombs: state.ui.currency.bombs,
                     items: state.ui.items,
-                    floor: 1  // Floor progression not implemented yet
+                    floor: state.session?.floor ?? 1
                 });
             }
 
@@ -128,10 +128,10 @@ async function main() {
                 uiManager.updateSpectatorOverlay({
                     sessionId: currentSessionId,
                     playerHealth: state.player.components.health?.current ?? 0,
-                    floor: 1,  // Floor progression not implemented yet
+                    floor: state.session?.floor ?? 1,
                     items: state.ui.items,
                     timePlayed,
-                    spectatorCount: 0  // TODO: Get from server
+                    spectatorCount: state.session?.spectatorCount ?? 0
                 });
             }
         },
