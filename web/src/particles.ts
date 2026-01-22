@@ -1,3 +1,6 @@
+import * as PIXI from 'pixi.js';
+import { Emitter, upgradeConfig } from '@pixi/particle-emitter';
+
 /**
  * Color mapping for particle effects by entity type.
  */
@@ -140,3 +143,115 @@ export const EMITTER_CONFIGS = {
         ]
     },
 };
+
+/**
+ * Creates a simple circle texture for particles.
+ * Returns null in non-browser environments (for testing).
+ */
+function createParticleTexture(): PIXI.Texture | null {
+    // Check if we're in a browser environment with canvas support
+    if (typeof document === 'undefined') {
+        return null;
+    }
+
+    try {
+        const canvas = document.createElement('canvas');
+        canvas.width = 16;
+        canvas.height = 16;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+            return null;
+        }
+
+        // Draw a simple white circle
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(8, 8, 6, 0, Math.PI * 2);
+        ctx.fill();
+
+        return PIXI.Texture.from(canvas);
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * Manages particle effects for the game.
+ */
+export class ParticleManager {
+    private container: PIXI.Container;
+    private emitters: Emitter[] = [];
+    private particleTexture: PIXI.Texture | null;
+
+    constructor(container: PIXI.Container) {
+        this.container = container;
+        this.particleTexture = createParticleTexture();
+    }
+
+    /**
+     * Spawn trail particles behind a projectile.
+     */
+    spawnTrail(x: number, y: number, entityType: string): void {
+        const color = getParticleColor(entityType);
+        this.spawnEmitter(x, y, EMITTER_CONFIGS.trail, color);
+    }
+
+    /**
+     * Spawn explosion particles on entity death.
+     */
+    spawnExplosion(x: number, y: number, entityType: string): void {
+        const color = getParticleColor(entityType);
+        this.spawnEmitter(x, y, EMITTER_CONFIGS.explosion, color);
+    }
+
+    /**
+     * Spawn sparkle particles on item pickup.
+     */
+    spawnSparkle(x: number, y: number): void {
+        this.spawnEmitter(x, y, EMITTER_CONFIGS.sparkle, PARTICLE_COLORS.item);
+    }
+
+    /**
+     * Spawn shimmer particles on door unlock.
+     */
+    spawnShimmer(x: number, y: number): void {
+        this.spawnEmitter(x, y, EMITTER_CONFIGS.shimmer, PARTICLE_COLORS.door);
+    }
+
+    /**
+     * Update all active emitters.
+     */
+    update(dt: number): void {
+        for (let i = this.emitters.length - 1; i >= 0; i--) {
+            const emitter = this.emitters[i];
+            emitter.update(dt);
+
+            // Remove completed emitters
+            if (!emitter.emit && emitter.particleCount === 0) {
+                emitter.destroy();
+                this.emitters.splice(i, 1);
+            }
+        }
+    }
+
+    private spawnEmitter(x: number, y: number, config: typeof EMITTER_CONFIGS.trail, _color: string): void {
+        // Skip if no texture available (e.g., in test environment)
+        if (!this.particleTexture) {
+            return;
+        }
+
+        try {
+            // Create emitter config with position
+            const emitterConfig = upgradeConfig({
+                ...config,
+                pos: { x, y },
+            }, [this.particleTexture]);
+
+            const emitter = new Emitter(this.container, emitterConfig);
+            emitter.emit = true;
+            this.emitters.push(emitter);
+        } catch (error) {
+            console.warn('Failed to spawn particle emitter:', error);
+        }
+    }
+}

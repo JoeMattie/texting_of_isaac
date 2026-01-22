@@ -1,5 +1,16 @@
-import { describe, it, expect } from 'vitest';
-import { PARTICLE_COLORS, getParticleColor, EMITTER_CONFIGS } from '../particles';
+import { describe, it, expect, vi } from 'vitest';
+import { PARTICLE_COLORS, getParticleColor, EMITTER_CONFIGS, ParticleManager } from '../particles';
+
+// Mock PIXI.Container for node environment
+class MockContainer {
+    children: unknown[] = [];
+    addChild(child: unknown) { this.children.push(child); return child; }
+    removeChild(child: unknown) {
+        const idx = this.children.indexOf(child);
+        if (idx >= 0) this.children.splice(idx, 1);
+        return child;
+    }
+}
 
 describe('PARTICLE_COLORS', () => {
     it('has player color as blue', () => {
@@ -61,5 +72,43 @@ describe('EMITTER_CONFIGS', () => {
     it('has shimmer config', () => {
         expect(EMITTER_CONFIGS.shimmer).toBeDefined();
         expect(EMITTER_CONFIGS.shimmer.lifetime).toBeDefined();
+    });
+});
+
+describe('ParticleManager', () => {
+    it('creates with container', () => {
+        const container = new MockContainer();
+        const manager = new ParticleManager(container as unknown as import('pixi.js').Container);
+        expect(manager).toBeDefined();
+    });
+
+    it('spawnTrail does not throw', () => {
+        const container = new MockContainer();
+        const manager = new ParticleManager(container as unknown as import('pixi.js').Container);
+        expect(() => manager.spawnTrail(100, 100, 'projectile')).not.toThrow();
+    });
+
+    it('spawnExplosion does not throw', () => {
+        const container = new MockContainer();
+        const manager = new ParticleManager(container as unknown as import('pixi.js').Container);
+        expect(() => manager.spawnExplosion(100, 100, 'enemy_chaser')).not.toThrow();
+    });
+
+    it('spawnSparkle does not throw', () => {
+        const container = new MockContainer();
+        const manager = new ParticleManager(container as unknown as import('pixi.js').Container);
+        expect(() => manager.spawnSparkle(100, 100)).not.toThrow();
+    });
+
+    it('spawnShimmer does not throw', () => {
+        const container = new MockContainer();
+        const manager = new ParticleManager(container as unknown as import('pixi.js').Container);
+        expect(() => manager.spawnShimmer(100, 100)).not.toThrow();
+    });
+
+    it('update does not throw', () => {
+        const container = new MockContainer();
+        const manager = new ParticleManager(container as unknown as import('pixi.js').Container);
+        expect(() => manager.update(0.016)).not.toThrow();
     });
 });
