@@ -222,19 +222,48 @@ const NEUTRAL_TRANSFORMS: SpriteTransforms = {
   alpha: 1,
 };
 
+/** Default flash configuration for hit effects */
+const DEFAULT_FLASH_CONFIG: FlashConfig = {
+  minAlpha: 0.3,
+  flashes: 3,
+  duration: 300,
+};
+
+/** Default pulse configuration for shoot effects */
+const DEFAULT_PULSE_CONFIG: TriggeredPulseConfig = {
+  targetScale: 1.2,
+  duration: 200,
+};
+
 /**
  * Manages procedural animations for game entities.
  */
 export class AnimationManager {
   private elapsed: number = 0;
+  private elapsedMs: number = 0;
   private triggeredAnimations: Map<number, TriggeredAnimation[]> = new Map();
 
   /**
-   * Update animation time.
+   * Update animation time and clean up expired triggered animations.
    * @param dt - Delta time in seconds
    */
   update(dt: number): void {
     this.elapsed += dt;
+    this.elapsedMs += dt * 1000;
+
+    // Clean up expired triggered animations
+    for (const [entityId, animations] of this.triggeredAnimations.entries()) {
+      const activeAnimations = animations.filter((anim) => {
+        const animElapsed = this.elapsedMs - anim.startTime;
+        return animElapsed < anim.duration;
+      });
+
+      if (activeAnimations.length === 0) {
+        this.triggeredAnimations.delete(entityId);
+      } else {
+        this.triggeredAnimations.set(entityId, activeAnimations);
+      }
+    }
   }
 
   /**
@@ -242,6 +271,46 @@ export class AnimationManager {
    */
   getElapsed(): number {
     return this.elapsed;
+  }
+
+  /**
+   * Trigger a flash animation on an entity (for hit effects).
+   * @param entityId - Entity to flash
+   */
+  triggerFlash(entityId: number): void {
+    const animation: TriggeredAnimation = {
+      type: 'flash',
+      startTime: this.elapsedMs,
+      duration: DEFAULT_FLASH_CONFIG.duration,
+      config: DEFAULT_FLASH_CONFIG,
+    };
+
+    const existing = this.triggeredAnimations.get(entityId) || [];
+    this.triggeredAnimations.set(entityId, [...existing, animation]);
+  }
+
+  /**
+   * Trigger a pulse animation on an entity (for shoot effects).
+   * @param entityId - Entity to pulse
+   */
+  triggerPulse(entityId: number): void {
+    const animation: TriggeredAnimation = {
+      type: 'pulse',
+      startTime: this.elapsedMs,
+      duration: DEFAULT_PULSE_CONFIG.duration,
+      config: DEFAULT_PULSE_CONFIG,
+    };
+
+    const existing = this.triggeredAnimations.get(entityId) || [];
+    this.triggeredAnimations.set(entityId, [...existing, animation]);
+  }
+
+  /**
+   * Remove all animations for an entity.
+   * @param entityId - Entity to clean up
+   */
+  removeEntity(entityId: number): void {
+    this.triggeredAnimations.delete(entityId);
   }
 
   /**
@@ -275,6 +344,38 @@ export class AnimationManager {
     // Apply wobble animation
     if (config.wobble) {
       transforms.rotation = calculateWobble(this.elapsed, config.wobble);
+    }
+
+    return transforms;
+  }
+
+  /**
+   * Calculate visual transforms for a specific entity, combining continuous and triggered animations.
+   * @param entityId - Entity ID for triggered animations
+   * @param entityType - Type of entity for continuous animations
+   * @returns Combined transforms to apply to the sprite
+   */
+  getTransformsForEntity(entityId: number, entityType: EntityType): SpriteTransforms {
+    // Start with continuous animations for this entity type
+    const transforms = this.getTransforms(entityType);
+
+    // Apply triggered animations for this specific entity
+    const triggered = this.triggeredAnimations.get(entityId);
+    if (!triggered || triggered.length === 0) {
+      return transforms;
+    }
+
+    for (const anim of triggered) {
+      const animElapsed = this.elapsedMs - anim.startTime;
+
+      if (anim.type === 'flash') {
+        const flashConfig = anim.config as FlashConfig;
+        transforms.alpha = calculateFlashAlpha(animElapsed, flashConfig);
+      } else if (anim.type === 'pulse') {
+        const pulseConfig = anim.config as TriggeredPulseConfig;
+        // Multiply scales for stacking
+        transforms.scale *= calculateTriggeredPulse(animElapsed, pulseConfig);
+      }
     }
 
     return transforms;

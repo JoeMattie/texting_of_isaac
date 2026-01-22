@@ -204,3 +204,61 @@ describe('AnimationManager', () => {
     expect(transforms.alpha).toBe(1);
   });
 });
+
+describe('AnimationManager triggered animations', () => {
+  it('should trigger flash animation on entity', () => {
+    const manager = new AnimationManager();
+    manager.triggerFlash(1); // Entity ID 1
+
+    const transforms = manager.getTransformsForEntity(1, 'player');
+    // At time 0, flash starts at minAlpha
+    expect(transforms.alpha).toBeCloseTo(0.3, 1);
+  });
+
+  it('should trigger pulse animation on entity', () => {
+    const manager = new AnimationManager();
+    manager.triggerPulse(1); // Entity ID 1
+
+    // Advance to middle of pulse
+    manager.update(0.1); // 100ms = half of 200ms duration
+
+    const transforms = manager.getTransformsForEntity(1, 'player');
+    expect(transforms.scale).toBeCloseTo(1.2, 1);
+  });
+
+  it('should remove expired triggered animations', () => {
+    const manager = new AnimationManager();
+    manager.triggerFlash(1);
+
+    // Advance past flash duration (300ms)
+    manager.update(0.4);
+
+    const transforms = manager.getTransformsForEntity(1, 'player');
+    expect(transforms.alpha).toBe(1); // Back to normal
+  });
+
+  it('should stack multiple triggered animations', () => {
+    const manager = new AnimationManager();
+    manager.triggerFlash(1);
+    manager.triggerPulse(1);
+
+    manager.update(0.025); // 25ms in - flash at 1/4 of first flash cycle
+
+    const transforms = manager.getTransformsForEntity(1, 'player');
+    // Both should be active
+    // At 25ms: flash alpha = 0.3 + 0.7 * sin(0.25 * PI) = ~0.79 (< 1)
+    // At 25ms: pulse scale = 1 + 0.2 * sin(0.125 * PI) = ~1.08 (> 1)
+    expect(transforms.alpha).toBeLessThan(1);
+    expect(transforms.scale).toBeGreaterThan(1);
+  });
+
+  it('should clean up entity animations on removeEntity', () => {
+    const manager = new AnimationManager();
+    manager.triggerFlash(1);
+    manager.removeEntity(1);
+
+    // Should return neutral transforms after removal
+    const transforms = manager.getTransformsForEntity(1, 'player');
+    expect(transforms.alpha).toBe(1);
+  });
+});
