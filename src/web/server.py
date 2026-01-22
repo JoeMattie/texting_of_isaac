@@ -17,7 +17,7 @@ class GameServer:
         self.session_manager = SessionManager()
         self.running = False
 
-    async def handle_client(self, websocket):
+    async def handle_client(self, websocket: websockets.WebSocketServerProtocol):
         """Handle a client connection."""
         session: Optional[GameSession] = None
         role = None
@@ -39,6 +39,11 @@ class GameServer:
                     if session:
                         session.add_spectator(websocket)
                         role = "spectator"
+                    else:
+                        # Session not found - send error and close
+                        error_msg = {"type": "error", "message": "Session not found"}
+                        await websocket.send(json.dumps(error_msg))
+                        return  # Close connection
 
                 if session:
                     # Send session info
@@ -59,8 +64,13 @@ class GameServer:
             pass
         finally:
             # Cleanup on disconnect
-            if session and role == "spectator":
-                session.remove_spectator(websocket)
+            if session:
+                if role == "spectator":
+                    session.remove_spectator(websocket)
+                elif role == "player":
+                    # Clean up player session
+                    session.running = False
+                    self.session_manager.remove_session(session.session_id)
 
     async def start(self):
         """Start the WebSocket server."""
