@@ -86,6 +86,6 @@ export class UIManager {
 }
 
 // Re-export types for convenience
-export { HUDData } from './ui/HUD';
-export { SessionListItem } from './ui/LandingPage';
-export { SpectatorData } from './ui/SpectatorOverlay';
+export type { HUDData } from './ui/HUD';
+export type { SessionListItem } from './ui/LandingPage';
+export type { SpectatorData } from './ui/SpectatorOverlay';

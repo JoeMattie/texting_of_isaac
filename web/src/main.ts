@@ -73,8 +73,9 @@ async function main() {
             uiManager.showGame(false);
         },
         onSpectate: () => {
-            // Request session list - connect temporarily to get list
-            networkClient.requestSessionList();
+            // TODO: Need to implement session listing via separate API endpoint
+            // For now, show empty list - spectate feature not fully implemented
+            uiManager.showSessionList([]);
         },
         onJoinSession: (sessionId: string) => {
             networkClient.connect('spectator', sessionId);
@@ -119,7 +120,7 @@ async function main() {
                     coins: state.ui.currency.coins,
                     bombs: state.ui.currency.bombs,
                     items: state.ui.items,
-                    floor: state.room?.position?.[1] ?? 1  // Use room position Y as floor, default 1
+                    floor: 1  // Floor progression not implemented yet
                 });
             }
 
@@ -129,7 +130,7 @@ async function main() {
                 uiManager.updateSpectatorOverlay({
                     sessionId: currentSessionId,
                     playerHealth: state.player.components.health?.current ?? 0,
-                    floor: state.room?.position?.[1] ?? 1,
+                    floor: 1,  // Floor progression not implemented yet
                     items: state.ui.items,
                     timePlayed,
                     spectatorCount: 0  // TODO: Get from server
