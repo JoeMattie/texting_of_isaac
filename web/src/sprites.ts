@@ -9,17 +9,18 @@ export type EntityType =
     | 'enemy_orbiter'
     | 'enemy_turret'
     | 'enemy_tank'
-    | 'projectile_player'
-    | 'projectile_enemy'
+    | 'projectile'
     | 'door'
     | 'heart'
     | 'coin'
     | 'bomb'
+    | 'item'
     | 'obstacle'
-    | 'wall';
+    | 'wall'
+    | 'unknown';
 
 export interface SpriteAtlas {
-    textures: Record<EntityType, PIXI.Texture>;
+    textures: Partial<Record<EntityType, PIXI.Texture>>;
     loaded: boolean;
 }
 
@@ -29,7 +30,7 @@ export class SpriteManager {
 
     constructor() {
         this.atlas = {
-            textures: {} as Record<EntityType, PIXI.Texture>,
+            textures: {},
             loaded: false
         };
     }
@@ -47,12 +48,12 @@ export class SpriteManager {
         // For now, create placeholder colored rectangles
         // Later: replace with actual sprite atlas loading
 
-        const canvas = document.createElement('canvas');
-        canvas.width = 32;
-        canvas.height = 32;
-        const ctx = canvas.getContext('2d')!;
-
         const createTexture = (color: string): PIXI.Texture => {
+            // Create a unique canvas for each texture to avoid color bleeding
+            const canvas = document.createElement('canvas');
+            canvas.width = 32;
+            canvas.height = 32;
+            const ctx = canvas.getContext('2d')!;
             ctx.fillStyle = color;
             ctx.fillRect(0, 0, 32, 32);
             return PIXI.Texture.from(canvas);
@@ -65,14 +66,15 @@ export class SpriteManager {
             enemy_orbiter: createTexture('#ff8800'),
             enemy_turret: createTexture('#880000'),
             enemy_tank: createTexture('#440000'),
-            projectile_player: createTexture('#00ffff'),
-            projectile_enemy: createTexture('#ff00ff'),
-            door: createTexture('#00ffff'),
+            projectile: createTexture('#00ffff'),
+            door: createTexture('#8b4513'),
             heart: createTexture('#ff0088'),
             coin: createTexture('#ffff00'),
             bomb: createTexture('#888888'),
+            item: createTexture('#9370db'),
             obstacle: createTexture('#666666'),
-            wall: createTexture('#333333')
+            wall: createTexture('#333333'),
+            unknown: createTexture('#ff00ff')
         };
 
         this.atlas.loaded = true;
