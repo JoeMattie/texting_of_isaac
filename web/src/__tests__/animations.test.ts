@@ -5,7 +5,10 @@ import {
   calculateBobOffset,
   calculatePulseScale,
   calculateRotation,
-  calculateWobble
+  calculateWobble,
+  TriggeredAnimation,
+  calculateFlashAlpha,
+  calculateTriggeredPulse
 } from '../animations';
 
 describe('Animation Configs', () => {
@@ -127,5 +130,41 @@ describe('calculateWobble', () => {
     const threeQuarterPeriod = 3 / (4 * frequency);
     const angle = calculateWobble(threeQuarterPeriod, { angle: 15, frequency });
     expect(angle).toBeCloseTo(-15, 5);
+  });
+});
+
+describe('calculateFlashAlpha', () => {
+  it('should return minAlpha at start', () => {
+    const alpha = calculateFlashAlpha(0, { minAlpha: 0.3, flashes: 3, duration: 300 });
+    expect(alpha).toBeCloseTo(0.3, 2);
+  });
+
+  it('should return 1.0 at half of first flash', () => {
+    // 3 flashes in 300ms = 100ms per flash, peak at 50ms
+    const alpha = calculateFlashAlpha(50, { minAlpha: 0.3, flashes: 3, duration: 300 });
+    expect(alpha).toBeCloseTo(1.0, 2);
+  });
+
+  it('should cycle through flashes', () => {
+    // At 150ms (middle of duration), should be at peak of second flash
+    const alpha = calculateFlashAlpha(150, { minAlpha: 0.3, flashes: 3, duration: 300 });
+    expect(alpha).toBeCloseTo(1.0, 2);
+  });
+});
+
+describe('calculateTriggeredPulse', () => {
+  it('should return 1.0 at start', () => {
+    const scale = calculateTriggeredPulse(0, { targetScale: 1.2, duration: 200 });
+    expect(scale).toBeCloseTo(1.0, 2);
+  });
+
+  it('should return targetScale at midpoint', () => {
+    const scale = calculateTriggeredPulse(100, { targetScale: 1.2, duration: 200 });
+    expect(scale).toBeCloseTo(1.2, 2);
+  });
+
+  it('should return 1.0 at end', () => {
+    const scale = calculateTriggeredPulse(200, { targetScale: 1.2, duration: 200 });
+    expect(scale).toBeCloseTo(1.0, 2);
   });
 });

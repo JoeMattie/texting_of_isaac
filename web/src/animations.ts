@@ -154,3 +154,54 @@ export function calculateRotation(elapsed: number, config: RotateConfig): number
 export function calculateWobble(elapsed: number, config: WobbleConfig): number {
   return config.angle * Math.sin(elapsed * config.frequency * 2 * Math.PI);
 }
+
+/** Configuration for flash animation (alpha flicker) */
+export interface FlashConfig {
+  minAlpha: number;   // Minimum alpha (0-1)
+  flashes: number;    // Number of flashes
+  duration: number;   // Total duration in milliseconds
+}
+
+/** Configuration for triggered pulse (one-shot scale) */
+export interface TriggeredPulseConfig {
+  targetScale: number;  // Max scale to reach
+  duration: number;     // Total duration in milliseconds
+}
+
+/** Types of triggered animations */
+export type TriggeredAnimationType = 'flash' | 'pulse';
+
+/** Active triggered animation instance */
+export interface TriggeredAnimation {
+  type: TriggeredAnimationType;
+  startTime: number;  // Timestamp when animation started
+  duration: number;   // Duration in milliseconds
+  config: FlashConfig | TriggeredPulseConfig;
+}
+
+/**
+ * Calculate alpha for flash animation.
+ * @param elapsedMs - Time since animation start in milliseconds
+ * @param config - Flash configuration
+ * @returns Alpha value (0-1)
+ */
+export function calculateFlashAlpha(elapsedMs: number, config: FlashConfig): number {
+  const flashDuration = config.duration / config.flashes;
+  const flashProgress = (elapsedMs % flashDuration) / flashDuration;
+  // Use sine wave for smooth flash: 0 -> 1 -> 0 per flash
+  const sineValue = Math.sin(flashProgress * Math.PI);
+  return config.minAlpha + (1 - config.minAlpha) * sineValue;
+}
+
+/**
+ * Calculate scale for triggered pulse animation.
+ * @param elapsedMs - Time since animation start in milliseconds
+ * @param config - Pulse configuration
+ * @returns Scale factor
+ */
+export function calculateTriggeredPulse(elapsedMs: number, config: TriggeredPulseConfig): number {
+  const progress = elapsedMs / config.duration;
+  // Sine wave from 0 to pi: starts at 1.0, peaks at targetScale, returns to 1.0
+  const sineValue = Math.sin(progress * Math.PI);
+  return 1.0 + (config.targetScale - 1.0) * sineValue;
+}
