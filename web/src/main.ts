@@ -78,7 +78,14 @@ async function main() {
     window.addEventListener('keydown', (e) => {
         if (gameKeys.has(e.key)) {
             e.preventDefault();
-            networkClient.sendInput(e.key);
+            networkClient.sendInput(e.key, 'press');
+        }
+    });
+
+    window.addEventListener('keyup', (e) => {
+        if (gameKeys.has(e.key)) {
+            e.preventDefault();
+            networkClient.sendInput(e.key, 'release');
         }
     });
 }

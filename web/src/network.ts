@@ -153,9 +153,10 @@ export class NetworkClient {
     /**
      * Send player input to the server.
      * Only valid for player connections.
-     * @param key - Key that was pressed (e.g., 'w', 'ArrowUp')
+     * @param key - Key that was pressed/released (e.g., 'w', 'ArrowUp')
+     * @param action - 'press' or 'release'
      */
-    sendInput(key: string): void {
+    sendInput(key: string, action: 'press' | 'release' = 'press'): void {
         // Only allow players to send input, silently ignore for spectators
         if (this.role !== 'player') {
             return;
@@ -163,7 +164,8 @@ export class NetworkClient {
 
         const inputMessage = {
             type: 'input',
-            key
+            key,
+            action
         };
         this.send(inputMessage);
     }

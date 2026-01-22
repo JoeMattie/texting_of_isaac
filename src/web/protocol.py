@@ -24,6 +24,7 @@ class ConnectMessage(Message):
 class InputMessage(Message):
     """Player input event."""
     key: str
+    action: str = "press"  # "press" or "release"
 
     def __post_init__(self):
         self.type = "input"
@@ -68,7 +69,10 @@ def parse_message(json_str: str) -> Union[ConnectMessage, InputMessage]:
     elif msg_type == "input":
         if "key" not in data:
             raise ValueError("InputMessage missing required field 'key'")
-        return InputMessage(key=data["key"])
+        return InputMessage(
+            key=data["key"],
+            action=data.get("action", "press")
+        )
     else:
         raise ValueError(f"Unknown message type: {msg_type}")
 
@@ -91,6 +95,7 @@ def serialize_message(msg: Message) -> str:
     elif isinstance(msg, InputMessage):
         return json.dumps({
             "type": msg.type,
-            "key": msg.key
+            "key": msg.key,
+            "action": msg.action
         })
     raise ValueError(f"Cannot serialize {type(msg)}")

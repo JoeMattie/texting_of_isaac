@@ -9,6 +9,13 @@ from example_state_export import export_game_state
 class GameSession:
     """Represents a single game session with one player and multiple spectators."""
 
+    # Key mappings for movement and shooting
+    MOVE_KEYS = {'w': (0, -1), 'a': (-1, 0), 's': (0, 1), 'd': (1, 0)}
+    SHOOT_KEYS = {
+        'ArrowUp': (0, -1), 'ArrowDown': (0, 1),
+        'ArrowLeft': (-1, 0), 'ArrowRight': (1, 0)
+    }
+
     def __init__(self, session_id: str):
         self.session_id = session_id
         self.world_name = f"web_session_{session_id}"
@@ -16,6 +23,8 @@ class GameSession:
         self.spectator_clients: Set[object] = set()
         self.running = True
         self.engine: Optional[GameEngine] = None
+        # Track currently pressed keys
+        self.pressed_keys: Set[str] = set()
 
     async def initialize_game(self):
         """Initialize the game engine for this session."""
@@ -25,7 +34,54 @@ class GameSession:
     async def update_game(self, delta_time: float):
         """Update the game state."""
         if self.engine:
+            # Sync input state to InputSystem before processing
+            self._sync_input_state()
             self.engine.update(delta_time)
+
+    def handle_input(self, key: str, action: str):
+        """Handle a key input event.
+
+        Args:
+            key: The key that was pressed/released
+            action: "press" or "release"
+        """
+        if action == "press":
+            self.pressed_keys.add(key)
+        elif action == "release":
+            self.pressed_keys.discard(key)
+
+    def _sync_input_state(self):
+        """Sync pressed keys to the InputSystem."""
+        if not self.engine:
+            return
+
+        # Calculate movement direction from pressed keys
+        move_x, move_y = 0, 0
+        for key in self.pressed_keys:
+            if key in self.MOVE_KEYS:
+                dx, dy = self.MOVE_KEYS[key]
+                move_x += dx
+                move_y += dy
+
+        # Calculate shoot direction from pressed keys
+        shoot_x, shoot_y = 0, 0
+        for key in self.pressed_keys:
+            if key in self.SHOOT_KEYS:
+                dx, dy = self.SHOOT_KEYS[key]
+                shoot_x += dx
+                shoot_y += dy
+
+        # Check for bomb key
+        bomb_pressed = 'e' in self.pressed_keys or ' ' in self.pressed_keys
+
+        # Clamp to -1, 0, 1 range
+        move_x = max(-1, min(1, move_x))
+        move_y = max(-1, min(1, move_y))
+        shoot_x = max(-1, min(1, shoot_x))
+        shoot_y = max(-1, min(1, shoot_y))
+
+        # Set input on the InputSystem
+        self.engine.input_system.set_input(move_x, move_y, shoot_x, shoot_y, bomb_pressed)
 
     def get_game_state(self) -> dict:
         """Export current game state as JSON-serializable dict."""

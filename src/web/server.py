@@ -84,11 +84,12 @@ class GameServer:
                     )
                     await websocket.send(serialize_message(response))
 
-                    # Keep connection alive
+                    # Keep connection alive and handle messages
                     async for msg_str in websocket:
                         msg = parse_message(msg_str)
-                        # Handle input messages here later
-                        pass
+                        # Handle input messages from players
+                        if isinstance(msg, InputMessage) and role == "player":
+                            session.handle_input(msg.key, msg.action)
 
         except websockets.exceptions.ConnectionClosed:
             pass
