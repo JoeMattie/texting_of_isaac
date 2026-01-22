@@ -46,7 +46,24 @@ class GameStateMessage(Message):
         self.type = "session_info"
 
 
-def parse_message(json_str: str) -> Union[ConnectMessage, InputMessage]:
+@dataclass
+class ListSessionsMessage(Message):
+    """Request to list active sessions."""
+
+    def __post_init__(self):
+        self.type = "list_sessions"
+
+
+@dataclass
+class SessionListMessage(Message):
+    """Response with list of active sessions."""
+    sessions: list  # List of session info dicts
+
+    def __post_init__(self):
+        self.type = "session_list"
+
+
+def parse_message(json_str: str) -> Union[ConnectMessage, InputMessage, "ListSessionsMessage"]:
     """Parse JSON string into message object.
 
     Raises:
@@ -73,6 +90,8 @@ def parse_message(json_str: str) -> Union[ConnectMessage, InputMessage]:
             key=data["key"],
             action=data.get("action", "press")
         )
+    elif msg_type == "list_sessions":
+        return ListSessionsMessage()
     else:
         raise ValueError(f"Unknown message type: {msg_type}")
 
@@ -97,5 +116,10 @@ def serialize_message(msg: Message) -> str:
             "type": msg.type,
             "key": msg.key,
             "action": msg.action
+        })
+    elif isinstance(msg, SessionListMessage):
+        return json.dumps({
+            "type": msg.type,
+            "sessions": msg.sessions
         })
     raise ValueError(f"Cannot serialize {type(msg)}")

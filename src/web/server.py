@@ -5,7 +5,7 @@ import json
 import websockets
 from typing import Optional
 from src.web.session_manager import SessionManager, GameSession
-from src.web.protocol import parse_message, ConnectMessage, InputMessage, serialize_message, GameStateMessage
+from src.web.protocol import parse_message, ConnectMessage, InputMessage, serialize_message, GameStateMessage, ListSessionsMessage, SessionListMessage
 
 
 class GameServer:
@@ -52,6 +52,13 @@ class GameServer:
             # Wait for connection message
             message_str = await websocket.recv()
             message = parse_message(message_str)
+
+            if isinstance(message, ListSessionsMessage):
+                # Handle list_sessions request without requiring connect first
+                sessions = self.session_manager.get_session_list()
+                response = SessionListMessage(sessions=sessions)
+                await websocket.send(serialize_message(response))
+                return  # Close connection after sending list
 
             if isinstance(message, ConnectMessage):
                 if message.role == "player":

@@ -89,6 +89,21 @@ class GameSession:
             return export_game_state(self.world_name)
         return {}
 
+    def get_session_info(self) -> dict:
+        """Get session info for listing."""
+        state = self.get_game_state()
+        player_health = 3  # default
+        floor = 1
+        if state and state.get('player'):
+            health = state['player'].get('components', {}).get('health', {})
+            player_health = health.get('current', 3)
+        return {
+            'sessionId': self.session_id,
+            'playerHealth': player_health,
+            'floor': floor,
+            'spectatorCount': len(self.spectator_clients)
+        }
+
     def set_player(self, websocket):
         """Set the player client for this session."""
         self.player_client = websocket
@@ -133,3 +148,12 @@ class SessionManager:
     def list_sessions(self) -> list:
         """List all active sessions."""
         return list(self.sessions.values())
+
+    def get_session_list(self) -> list:
+        """Get list of active sessions with basic info."""
+        result = []
+        for session_id, session in self.sessions.items():
+            if session.running:
+                info = session.get_session_info()
+                result.append(info)
+        return result
