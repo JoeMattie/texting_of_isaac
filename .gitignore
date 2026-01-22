@@ -49,3 +49,9 @@ Thumbs.db
 web/node_modules/
 web/dist/
 web/package-lock.json
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.*.local
