@@ -3,6 +3,7 @@ import uuid
 import esper
 from typing import Optional, Set, Dict
 from src.game.engine import GameEngine
+from example_state_export import export_game_state
 
 
 class GameSession:
@@ -15,6 +16,22 @@ class GameSession:
         self.spectator_clients: Set[object] = set()
         self.running = True
         self.engine: Optional[GameEngine] = None
+
+    async def initialize_game(self):
+        """Initialize the game engine for this session."""
+        # Create engine with unique world name
+        self.engine = GameEngine(world_name=self.world_name)
+
+    async def update_game(self, delta_time: float):
+        """Update the game state."""
+        if self.engine:
+            self.engine.update(delta_time)
+
+    def get_game_state(self) -> dict:
+        """Export current game state as JSON-serializable dict."""
+        if self.engine:
+            return export_game_state(self.world_name)
+        return {}
 
     def set_player(self, websocket):
         """Set the player client for this session."""

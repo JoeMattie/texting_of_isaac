@@ -6,7 +6,8 @@ which can be sent to a web frontend for rendering with sprites.
 import json
 import esper
 from src.components.core import Position, Sprite, Health, Velocity
-from src.components.game import Player, Enemy, Currency, CollectedItems
+from src.components.game import Player, Enemy, CollectedItems
+from src.components.dungeon import Currency
 from src.components.dungeon import Door
 from src.components.combat import Collider
 from src.config import Config

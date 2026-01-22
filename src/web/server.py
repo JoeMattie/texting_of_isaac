@@ -17,10 +17,36 @@ class GameServer:
         self.session_manager = SessionManager()
         self.running = False
 
+    async def run_session_game_loop(self, session: GameSession):
+        """Run the game loop for a session."""
+        # Initialize game
+        await session.initialize_game()
+
+        frame_time = 1.0 / 30  # 30 FPS
+
+        while session.running and self.running:
+            # Update game
+            await session.update_game(frame_time)
+
+            # Get game state
+            state = session.get_game_state()
+            state_json = json.dumps(state)
+
+            # Broadcast to all clients
+            clients = session.get_all_clients()
+            if clients:
+                await asyncio.gather(
+                    *[client.send(state_json) for client in clients],
+                    return_exceptions=True
+                )
+
+            await asyncio.sleep(frame_time)
+
     async def handle_client(self, websocket: websockets.WebSocketServerProtocol):
         """Handle a client connection."""
         session: Optional[GameSession] = None
         role = None
+        game_task = None
 
         try:
             # Wait for connection message
@@ -33,6 +59,10 @@ class GameServer:
                     session = self.session_manager.create_session()
                     session.set_player(websocket)
                     role = "player"
+
+                    # Start game loop for this session
+                    game_task = asyncio.create_task(self.run_session_game_loop(session))
+
                 elif message.role == "spectator" and message.session_id:
                     # Join existing session as spectator
                     session = self.session_manager.get_session(message.session_id)
@@ -70,6 +100,8 @@ class GameServer:
                 elif role == "player":
                     # Clean up player session
                     session.running = False
+                    if game_task:
+                        game_task.cancel()
                     self.session_manager.remove_session(session.session_id)
 
     async def start(self):

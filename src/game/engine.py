@@ -22,15 +22,16 @@ from src.systems.game_state import GameStateSystem
 class GameEngine:
     """Main game engine managing ECS world and game loop."""
 
-    def __init__(self, dungeon=None):
+    def __init__(self, dungeon=None, world_name=None):
         """Initialize the game engine.
 
         Args:
             dungeon: Optional Dungeon instance for minimap rendering
+            world_name: Optional world name (defaults to auto-generated)
         """
         # Esper uses module-level world management
         # Each engine gets its own world by name
-        self.world_name = f"game_world_{id(self)}"
+        self.world_name = world_name if world_name else f"game_world_{id(self)}"
         esper.switch_world(self.world_name)
         self.world = esper  # Expose esper module as world interface
         self.running = True
