@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { PARTICLE_COLORS, getParticleColor } from '../particles';
+import { PARTICLE_COLORS, getParticleColor, EMITTER_CONFIGS } from '../particles';
 
 describe('PARTICLE_COLORS', () => {
     it('has player color as blue', () => {
@@ -39,5 +39,27 @@ describe('getParticleColor', () => {
 
     it('returns default white for unknown type', () => {
         expect(getParticleColor('unknown_entity')).toBe('#ffffff');
+    });
+});
+
+describe('EMITTER_CONFIGS', () => {
+    it('has trail config', () => {
+        expect(EMITTER_CONFIGS.trail).toBeDefined();
+        expect(EMITTER_CONFIGS.trail.lifetime).toBeDefined();
+    });
+
+    it('has explosion config', () => {
+        expect(EMITTER_CONFIGS.explosion).toBeDefined();
+        expect(EMITTER_CONFIGS.explosion.lifetime).toBeDefined();
+    });
+
+    it('has sparkle config', () => {
+        expect(EMITTER_CONFIGS.sparkle).toBeDefined();
+        expect(EMITTER_CONFIGS.sparkle.lifetime).toBeDefined();
+    });
+
+    it('has shimmer config', () => {
+        expect(EMITTER_CONFIGS.shimmer).toBeDefined();
+        expect(EMITTER_CONFIGS.shimmer.lifetime).toBeDefined();
     });
 });
