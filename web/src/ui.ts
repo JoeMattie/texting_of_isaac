@@ -19,7 +19,19 @@ export class UIManager {
         this.createUI();
     }
 
+    private escapeHtml(text: string): string {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
     private createUI(): void {
+        // Check if UI already exists and remove it
+        let existingUI = document.getElementById('ui-container');
+        if (existingUI) {
+            existingUI.remove();
+        }
+
         // Create UI container
         const uiContainer = document.createElement('div');
         uiContainer.id = 'ui-container';
@@ -72,8 +84,8 @@ export class UIManager {
     updateSessionInfo(info: SessionInfo): void {
         if (this.sessionElement) {
             this.sessionElement.innerHTML = `
-                <strong>Session:</strong> ${info.sessionId}<br>
-                <strong>Role:</strong> ${info.role}
+                <strong>Session:</strong> ${this.escapeHtml(info.sessionId)}<br>
+                <strong>Role:</strong> ${this.escapeHtml(info.role)}
             `;
         }
     }
@@ -96,7 +108,7 @@ export class UIManager {
 
         // Update items
         if (this.itemsElement && uiData.items.length > 0) {
-            const itemsList = uiData.items.map(item => `• ${item}`).join('<br>');
+            const itemsList = uiData.items.map(item => `• ${this.escapeHtml(item)}`).join('<br>');
             this.itemsElement.innerHTML = `<strong>Items:</strong><br>${itemsList}`;
         }
     }
@@ -117,5 +129,17 @@ export class UIManager {
         if (this.statusElement) {
             this.statusElement.textContent = '';
         }
+    }
+
+    destroy(): void {
+        const uiContainer = document.getElementById('ui-container');
+        if (uiContainer) {
+            uiContainer.remove();
+        }
+        this.sessionElement = null;
+        this.healthElement = null;
+        this.currencyElement = null;
+        this.itemsElement = null;
+        this.statusElement = null;
     }
 }

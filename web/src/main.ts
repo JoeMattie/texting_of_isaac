@@ -26,9 +26,16 @@ async function main() {
     }
 
     // Initialize sprite manager and load sprites
-    const spriteManager = new SpriteManager();
-    await spriteManager.load();
-    console.log('Sprites loaded');
+    let spriteManager: SpriteManager;
+    try {
+        spriteManager = new SpriteManager();
+        await spriteManager.load();
+        console.log('Sprites loaded');
+    } catch (error) {
+        console.error('Failed to load sprites:', error);
+        document.body.innerHTML = '<div style="color: red; padding: 20px;">Failed to load game assets. Please refresh.</div>';
+        return;
+    }
 
     // Initialize renderer
     const renderer = new GameRenderer(app, spriteManager);
@@ -66,9 +73,13 @@ async function main() {
     networkClient.connect('player');
 
     // Setup keyboard input (WASD for movement, arrows for shooting)
+    const gameKeys = new Set(['w', 'a', 's', 'd', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'e']);
+
     window.addEventListener('keydown', (e) => {
-        // Only send input if we're the player
-        networkClient.sendInput(e.key);
+        if (gameKeys.has(e.key)) {
+            e.preventDefault();
+            networkClient.sendInput(e.key);
+        }
     });
 }
 
