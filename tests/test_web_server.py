@@ -80,3 +80,48 @@ async def test_spectator_invalid_session():
             await server_task
         except asyncio.CancelledError:
             pass
+
+
+@pytest.mark.asyncio
+async def test_spectator_joins_existing_session():
+    """Test that a spectator can join an existing player's session."""
+    server = GameServer(host="localhost", port=8769)
+
+    # Start server
+    server_task = asyncio.create_task(server.start())
+    await asyncio.sleep(0.1)
+
+    try:
+        # Player connects first
+        async with websockets.connect("ws://localhost:8769") as player_ws:
+            player_connect = {"type": "connect", "role": "player"}
+            await player_ws.send(json.dumps(player_connect))
+
+            # Get session ID
+            response = await player_ws.recv()
+            session_data = json.loads(response)
+            session_id = session_data["sessionId"]
+
+            # Spectator joins that session
+            async with websockets.connect("ws://localhost:8769") as spectator_ws:
+                spectator_connect = {
+                    "type": "connect",
+                    "role": "spectator",
+                    "sessionId": session_id
+                }
+                await spectator_ws.send(json.dumps(spectator_connect))
+
+                # Verify spectator gets session confirmation
+                spec_response = await spectator_ws.recv()
+                spec_data = json.loads(spec_response)
+
+                assert spec_data["type"] == "session_info"
+                assert spec_data["role"] == "spectator"
+                assert spec_data["sessionId"] == session_id
+    finally:
+        server.running = False
+        server_task.cancel()
+        try:
+            await server_task
+        except asyncio.CancelledError:
+            pass

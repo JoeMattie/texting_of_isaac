@@ -44,7 +44,7 @@ async function main() {
     const uiManager = new UIManager();
 
     // Connect to game server
-    const wsUrl = 'ws://localhost:8765';
+    const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8765';
     const networkClient = new NetworkClient(wsUrl, {
         onSessionInfo: (info) => {
             console.log('Session established:', info);
