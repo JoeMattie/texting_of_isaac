@@ -234,20 +234,35 @@ export class ParticleManager {
         }
     }
 
-    private spawnEmitter(x: number, y: number, config: typeof EMITTER_CONFIGS.trail, _color: string): void {
+    private spawnEmitter(x: number, y: number, config: typeof EMITTER_CONFIGS.trail, color: string): void {
         // Skip if no texture available (e.g., in test environment)
         if (!this.particleTexture) {
             return;
         }
 
         try {
-            // Create emitter config with position
-            const emitterConfig = upgradeConfig({
-                ...config,
-                pos: { x, y },
-            }, [this.particleTexture]);
+            // Add color behavior to config for tinting particles
+            const colorBehavior = {
+                type: 'color',
+                config: {
+                    color: {
+                        list: [
+                            { value: color, time: 0 },
+                            { value: color, time: 1 }
+                        ]
+                    }
+                }
+            };
 
-            const emitter = new Emitter(this.container, emitterConfig);
+            const configWithColor = {
+                ...config,
+                behaviors: [...config.behaviors, colorBehavior],
+                pos: { x, y },
+            };
+
+            const emitterConfig = upgradeConfig(configWithColor, [this.particleTexture]);
+
+            const emitter = new Emitter(this.container as any, emitterConfig);
             emitter.emit = true;
             this.emitters.push(emitter);
         } catch (error) {

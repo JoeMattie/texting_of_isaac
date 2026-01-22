@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { PARTICLE_COLORS, getParticleColor, EMITTER_CONFIGS, ParticleManager } from '../particles';
 
 // Mock PIXI.Container for node environment
