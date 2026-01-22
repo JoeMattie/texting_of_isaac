@@ -112,3 +112,13 @@ export const ANIMATION_CONFIGS: Partial<Record<EntityType, AnimationConfig>> = {
   wall: {},
   unknown: {},
 };
+
+/**
+ * Calculate Y offset for bob animation at given time.
+ * @param elapsed - Time in seconds
+ * @param config - Bob configuration
+ * @returns Y offset in pixels
+ */
+export function calculateBobOffset(elapsed: number, config: BobConfig): number {
+  return config.amplitude * Math.sin(elapsed * config.frequency * 2 * Math.PI);
+}
