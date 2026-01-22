@@ -100,7 +100,6 @@ export class NetworkClient {
         this.ws = new WebSocket(this.url);
 
         this.ws.onopen = () => {
-            console.log('WebSocket connected');
             this.reconnectAttempts = 0;
 
             // Send connect message
@@ -117,18 +116,15 @@ export class NetworkClient {
                 const data = JSON.parse(event.data);
                 this.handleMessage(data);
             } catch (error) {
-                console.error('Failed to parse message:', error);
                 this.handlers.onError?.('Invalid message format');
             }
         };
 
         this.ws.onerror = (error) => {
-            console.error('WebSocket error:', error);
             this.handlers.onError?.('Connection error');
         };
 
         this.ws.onclose = () => {
-            console.log('WebSocket closed');
             this.handlers.onDisconnect?.();
             this.attemptReconnect();
         };
@@ -145,16 +141,12 @@ export class NetworkClient {
                 role: data.role,
                 status: data.status
             };
-            // Store session ID for reconnection
-            this.sessionId = data.sessionId;
             this.handlers.onSessionInfo?.(info);
         } else if (data.type === 'error') {
             this.handlers.onError?.(data.message);
         } else if (data.frame && data.entities) {
             // Game state update (has frame and entities fields)
             this.handlers.onGameState?.(data as GameState);
-        } else {
-            console.warn('Unknown message type:', data);
         }
     }
 
@@ -177,8 +169,6 @@ export class NetworkClient {
     private send(message: any): void {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
             this.ws.send(JSON.stringify(message));
-        } else {
-            console.error('WebSocket not connected, cannot send message');
         }
     }
 
@@ -188,14 +178,10 @@ export class NetworkClient {
     private attemptReconnect(): void {
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
             this.reconnectAttempts++;
-            console.log(
-                `Attempting reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`
-            );
             this.reconnectTimeoutId = window.setTimeout(() => {
                 this.connect(this.role, this.sessionId);
             }, 2000);
         } else {
-            console.error('Max reconnect attempts reached');
             this.handlers.onError?.('Failed to reconnect after multiple attempts');
         }
     }
@@ -220,17 +206,4 @@ export class NetworkClient {
         this.reconnectAttempts = 0;
     }
 
-    /**
-     * Check if the client is currently connected.
-     */
-    isConnected(): boolean {
-        return this.ws !== null && this.ws.readyState === WebSocket.OPEN;
-    }
-
-    /**
-     * Get the current session ID (if connected).
-     */
-    getSessionId(): string | undefined {
-        return this.sessionId;
-    }
 }
