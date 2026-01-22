@@ -8,7 +8,8 @@ import {
   calculateWobble,
   TriggeredAnimation,
   calculateFlashAlpha,
-  calculateTriggeredPulse
+  calculateTriggeredPulse,
+  AnimationManager
 } from '../animations';
 
 describe('Animation Configs', () => {
@@ -166,5 +167,40 @@ describe('calculateTriggeredPulse', () => {
   it('should return 1.0 at end', () => {
     const scale = calculateTriggeredPulse(200, { targetScale: 1.2, duration: 200 });
     expect(scale).toBeCloseTo(1.0, 2);
+  });
+});
+
+describe('AnimationManager', () => {
+  it('should initialize with empty state', () => {
+    const manager = new AnimationManager();
+    expect(manager.getElapsed()).toBe(0);
+  });
+
+  it('should accumulate elapsed time on update', () => {
+    const manager = new AnimationManager();
+    manager.update(0.1);  // 100ms
+    expect(manager.getElapsed()).toBeCloseTo(0.1, 5);
+    manager.update(0.05); // 50ms more
+    expect(manager.getElapsed()).toBeCloseTo(0.15, 5);
+  });
+
+  it('should calculate transforms for entity type', () => {
+    const manager = new AnimationManager();
+    manager.update(0.125); // At quarter period for 2Hz bob
+
+    const transforms = manager.getTransforms('player');
+    expect(transforms.yOffset).toBeCloseTo(2, 1); // 2px amplitude at peak
+    expect(transforms.scale).toBe(1);
+    expect(transforms.rotation).toBe(0);
+    expect(transforms.alpha).toBe(1);
+  });
+
+  it('should return neutral transforms for unknown entity type', () => {
+    const manager = new AnimationManager();
+    const transforms = manager.getTransforms('unknown');
+    expect(transforms.yOffset).toBe(0);
+    expect(transforms.scale).toBe(1);
+    expect(transforms.rotation).toBe(0);
+    expect(transforms.alpha).toBe(1);
   });
 });

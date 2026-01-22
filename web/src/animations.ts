@@ -205,3 +205,78 @@ export function calculateTriggeredPulse(elapsedMs: number, config: TriggeredPuls
   const sineValue = Math.sin(progress * Math.PI);
   return 1.0 + (config.targetScale - 1.0) * sineValue;
 }
+
+/** Visual transforms to apply to a sprite */
+export interface SpriteTransforms {
+  yOffset: number;   // Pixels
+  scale: number;     // Scale factor
+  rotation: number;  // Degrees
+  alpha: number;     // 0-1
+}
+
+/** Neutral transforms (no animation) */
+const NEUTRAL_TRANSFORMS: SpriteTransforms = {
+  yOffset: 0,
+  scale: 1,
+  rotation: 0,
+  alpha: 1,
+};
+
+/**
+ * Manages procedural animations for game entities.
+ */
+export class AnimationManager {
+  private elapsed: number = 0;
+  private triggeredAnimations: Map<number, TriggeredAnimation[]> = new Map();
+
+  /**
+   * Update animation time.
+   * @param dt - Delta time in seconds
+   */
+  update(dt: number): void {
+    this.elapsed += dt;
+  }
+
+  /**
+   * Get current elapsed time.
+   */
+  getElapsed(): number {
+    return this.elapsed;
+  }
+
+  /**
+   * Calculate visual transforms for an entity type.
+   * @param entityType - Type of entity
+   * @returns Transforms to apply to the sprite
+   */
+  getTransforms(entityType: EntityType): SpriteTransforms {
+    const config = ANIMATION_CONFIGS[entityType];
+    if (!config) {
+      return { ...NEUTRAL_TRANSFORMS };
+    }
+
+    const transforms: SpriteTransforms = { ...NEUTRAL_TRANSFORMS };
+
+    // Apply bob animation
+    if (config.bob) {
+      transforms.yOffset = calculateBobOffset(this.elapsed, config.bob);
+    }
+
+    // Apply pulse animation
+    if (config.pulse) {
+      transforms.scale = calculatePulseScale(this.elapsed, config.pulse);
+    }
+
+    // Apply rotation animation
+    if (config.rotate) {
+      transforms.rotation = calculateRotation(this.elapsed, config.rotate);
+    }
+
+    // Apply wobble animation
+    if (config.wobble) {
+      transforms.rotation = calculateWobble(this.elapsed, config.wobble);
+    }
+
+    return transforms;
+  }
+}
