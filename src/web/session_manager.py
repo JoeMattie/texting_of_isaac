@@ -119,9 +119,13 @@ class GameSession:
                 room_position = list(self.room_manager.current_position)
                 self.current_floor = self.room_manager.current_floor
             # Add session metadata
+            game_state = 'playing'
+            if self.engine.game_state_system:
+                game_state = self.engine.game_state_system.current_state.value
             state['session'] = {
                 'floor': self.current_floor,
                 'roomPosition': room_position,
+                'gameState': game_state,
                 'spectatorCount': len(self.spectator_clients)
             }
             return state

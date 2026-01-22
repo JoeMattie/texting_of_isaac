@@ -63,6 +63,7 @@ export interface GameState {
     session?: {
         floor: number;
         roomPosition: [number, number] | null;
+        gameState: 'playing' | 'victory' | 'game_over';
         spectatorCount: number;
     };
 }

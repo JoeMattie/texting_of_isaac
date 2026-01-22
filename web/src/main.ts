@@ -10,6 +10,7 @@ import { AnimationManager, EntityType } from './animations';
 import { InterpolationManager } from './interpolation';
 import { ParticleManager } from './particles';
 import { TransitionManager } from './transitions';
+import { GameOverlay } from './ui/GameOverlay';
 
 async function main() {
     console.log('Texting of Isaac - Web Edition');
@@ -82,6 +83,7 @@ async function main() {
         onPlay: () => {
             networkClient.connect('player');
             uiManager.showGame(false);
+            gameOverlay.hide();
         },
         onSpectate: () => {
             networkClient.fetchSessionList();
@@ -89,6 +91,21 @@ async function main() {
         onJoinSession: (sessionId: string) => {
             networkClient.connect('spectator', sessionId);
             uiManager.showGame(true);
+            gameOverlay.hide();
+        }
+    });
+
+    // Initialize game overlay for death/victory screens
+    const gameOverlay = new GameOverlay(document.body, {
+        onRestart: () => {
+            networkClient.disconnect();
+            networkClient.connect('player');
+            gameOverlay.hide();
+        },
+        onMainMenu: () => {
+            networkClient.disconnect();
+            uiManager.showLanding();
+            gameOverlay.hide();
         }
     });
 
@@ -125,9 +142,22 @@ async function main() {
 
             // Detect state changes for triggered animations
             if (previousState) {
-                detectStateChanges(previousState, state, animationManager, interpolationManager, particleManager);
+                detectStateChanges(previousState, state, animationManager, interpolationManager, particleManager, transitionManager);
             }
             previousState = state;
+
+            // Check for game end state and show overlay
+            const gameState = state.session?.gameState;
+            if (gameState === 'victory' || gameState === 'game_over') {
+                if (!gameOverlay.isVisible()) {
+                    gameOverlay.show(gameState, {
+                        floor: state.session?.floor,
+                        items: state.ui?.items
+                    });
+                }
+            } else if (gameOverlay.isVisible()) {
+                gameOverlay.hide();
+            }
 
             // Render game state (creates sprites)
             renderer.render(state);
@@ -232,13 +262,16 @@ async function main() {
  * @param curr - Current game state
  * @param animationManager - Animation manager instance
  * @param interpolationManager - Interpolation manager instance
+ * @param particleManager - Particle manager instance
+ * @param transitionManager - Transition manager for screen shake
  */
 function detectStateChanges(
     prev: GameState,
     curr: GameState,
     animationManager: AnimationManager,
     interpolationManager: InterpolationManager,
-    particleManager: ParticleManager
+    particleManager: ParticleManager,
+    transitionManager: TransitionManager
 ): void {
     // Detect player hit
     if (prev.player && curr.player) {
@@ -246,6 +279,8 @@ function detectStateChanges(
         const currHealth = curr.player.components.health?.current;
         if (prevHealth !== undefined && currHealth !== undefined && currHealth < prevHealth) {
             animationManager.triggerFlash(curr.player.id);
+            // Trigger screen shake on player damage
+            transitionManager.startShake(0.8);
         }
     }
 

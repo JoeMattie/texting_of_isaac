@@ -146,4 +146,64 @@ describe('TransitionManager', () => {
             expect(state.direction.y).toBe(1);
         });
     });
+
+    describe('screen shake', () => {
+        it('starts inactive', () => {
+            expect(manager.isShaking()).toBe(false);
+        });
+
+        it('activates shake when startShake called', () => {
+            manager.startShake();
+            expect(manager.isShaking()).toBe(true);
+        });
+
+        it('returns non-zero offset when shaking', () => {
+            manager.startShake(1.0);
+            const offset = manager.getOffset();
+            // Shake uses sin/cos so offset will be non-zero
+            expect(offset.x !== 0 || offset.y !== 0).toBe(true);
+        });
+
+        it('deactivates after duration elapses', () => {
+            manager.startShake(1.0, 0.1);  // 0.1s duration
+            manager.update(0.15);  // Past duration
+            expect(manager.isShaking()).toBe(false);
+        });
+
+        it('clamps intensity to valid range', () => {
+            manager.startShake(2.0);  // Above max
+            const state = manager.getShakeState();
+            expect(state.intensity).toBeLessThanOrEqual(1);
+
+            manager.startShake(-1);  // Below min
+            const state2 = manager.getShakeState();
+            expect(state2.intensity).toBeGreaterThanOrEqual(0);
+        });
+
+        it('returns zero offset after shake completes', () => {
+            manager.startShake(1.0, 0.1);
+            manager.update(0.2);  // Complete shake
+            const offset = manager.getOffset();
+            expect(offset.x).toBe(0);
+            expect(offset.y).toBe(0);
+        });
+
+        it('combines shake with transition offset', () => {
+            // Start both a transition and shake
+            manager.startTransition([0, 0], [1, 0]);
+            manager.startShake(1.0);
+
+            const offset = manager.getOffset();
+            // Should have both transition and shake contributing
+            // Since we're in slide-out, x should be negative from transition
+            // Shake adds random offset
+            expect(Math.abs(offset.x) > 0 || Math.abs(offset.y) > 0).toBe(true);
+        });
+
+        it('uses custom duration when provided', () => {
+            manager.startShake(1.0, 0.5);
+            const state = manager.getShakeState();
+            expect(state.timeRemaining).toBe(0.5);
+        });
+    });
 });
