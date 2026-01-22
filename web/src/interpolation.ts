@@ -89,4 +89,11 @@ export class InterpolationManager {
     removeEntity(entityId: number): void {
         this.positions.delete(entityId);
     }
+
+    /**
+     * Clear all tracked positions (used on room transitions).
+     */
+    clear(): void {
+        this.positions.clear();
+    }
 }

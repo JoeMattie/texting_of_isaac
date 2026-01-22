@@ -62,6 +62,7 @@ export interface GameState {
     };
     session?: {
         floor: number;
+        roomPosition: [number, number] | null;
         spectatorCount: number;
     };
 }

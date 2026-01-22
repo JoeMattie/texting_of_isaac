@@ -6,12 +6,14 @@ import { GameState } from './network';
 
 export class GameRenderer {
     private app: PIXI.Application;
+    private container: PIXI.Container;
     private spriteManager: SpriteManager;
     private entitySprites: Map<number, PIXI.Sprite> = new Map();
     private tileSize: number = 32;
 
-    constructor(app: PIXI.Application, spriteManager: SpriteManager) {
+    constructor(app: PIXI.Application, spriteManager: SpriteManager, container?: PIXI.Container) {
         this.app = app;
+        this.container = container ?? app.stage;
         this.spriteManager = spriteManager;
     }
 
@@ -47,7 +49,7 @@ export class GameRenderer {
         // Remove sprites for dead entities
         for (const [entityId, sprite] of this.entitySprites) {
             if (!activeEntityIds.has(entityId)) {
-                this.app.stage.removeChild(sprite);
+                this.container.removeChild(sprite);
                 sprite.destroy();
                 this.entitySprites.delete(entityId);
             }
@@ -69,7 +71,7 @@ export class GameRenderer {
 
         const sprite = new PIXI.Sprite(texture);
         sprite.anchor.set(0.5); // Center the sprite on its position
-        this.app.stage.addChild(sprite);
+        this.container.addChild(sprite);
         this.entitySprites.set(entityId, sprite);
         return sprite;
     }
@@ -77,7 +79,7 @@ export class GameRenderer {
     clear(): void {
         // Remove all entity sprites
         for (const [entityId, sprite] of this.entitySprites) {
-            this.app.stage.removeChild(sprite);
+            this.container.removeChild(sprite);
             sprite.destroy();
         }
         this.entitySprites.clear();

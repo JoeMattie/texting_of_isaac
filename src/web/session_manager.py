@@ -3,6 +3,10 @@ import uuid
 import esper
 from typing import Optional, Set, Dict
 from src.game.engine import GameEngine
+from src.game.dungeon import generate_dungeon
+from src.systems.room_manager import RoomManager
+from src.entities.player import create_player
+from src.config import Config
 from example_state_export import export_game_state
 
 
@@ -23,15 +27,35 @@ class GameSession:
         self.spectator_clients: Set[object] = set()
         self.running = True
         self.engine: Optional[GameEngine] = None
+        self.dungeon = None
+        self.room_manager: Optional[RoomManager] = None
         # Track currently pressed keys
         self.pressed_keys: Set[str] = set()
-        # Floor progression (for future expansion)
+        # Floor progression
         self.current_floor: int = 1
 
     async def initialize_game(self):
-        """Initialize the game engine for this session."""
-        # Create engine with unique world name
-        self.engine = GameEngine(world_name=self.world_name)
+        """Initialize the game engine with dungeon for this session."""
+        # Generate dungeon
+        self.dungeon = generate_dungeon()
+
+        # Create engine with dungeon
+        self.engine = GameEngine(dungeon=self.dungeon, world_name=self.world_name)
+
+        # Create RoomManager and register as processor
+        self.room_manager = RoomManager(self.dungeon, current_floor=self.current_floor)
+        esper.switch_world(self.world_name)
+        esper.add_processor(self.room_manager, priority=4.8)
+
+        # Wire RoomManager to CollisionSystem for door transitions
+        self.engine.collision_system.room_manager = self.room_manager
+
+        # Create player at dungeon start position
+        start_room = self.dungeon.rooms[self.dungeon.start_position]
+        create_player(self.world_name, Config.ROOM_WIDTH / 2, Config.ROOM_HEIGHT / 2)
+
+        # Spawn initial room contents (doors, enemies if any)
+        self.room_manager.spawn_room_contents()
 
     async def update_game(self, delta_time: float):
         """Update the game state."""
@@ -89,9 +113,15 @@ class GameSession:
         """Export current game state as JSON-serializable dict."""
         if self.engine:
             state = export_game_state(self.world_name)
+            # Get room position from room manager
+            room_position = None
+            if self.room_manager:
+                room_position = list(self.room_manager.current_position)
+                self.current_floor = self.room_manager.current_floor
             # Add session metadata
             state['session'] = {
                 'floor': self.current_floor,
+                'roomPosition': room_position,
                 'spectatorCount': len(self.spectator_clients)
             }
             return state

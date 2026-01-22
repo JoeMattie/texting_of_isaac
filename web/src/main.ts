@@ -9,6 +9,7 @@ import { UIManager } from './ui';
 import { AnimationManager, EntityType } from './animations';
 import { InterpolationManager } from './interpolation';
 import { ParticleManager } from './particles';
+import { TransitionManager } from './transitions';
 
 async function main() {
     console.log('Texting of Isaac - Web Edition');
@@ -41,8 +42,8 @@ async function main() {
         return;
     }
 
-    // Initialize renderer
-    const renderer = new GameRenderer(app, spriteManager);
+    // Initialize renderer (using gameContainer for transitions)
+    const renderer = new GameRenderer(app, spriteManager, gameContainer);
 
     // Initialize animation manager
     const animationManager = new AnimationManager();
@@ -50,13 +51,23 @@ async function main() {
     // Initialize interpolation manager
     const interpolationManager = new InterpolationManager();
 
-    // Initialize particle manager
+    // Create game container for all game content (allows transition effects)
+    const gameContainer = new PIXI.Container();
+    app.stage.addChild(gameContainer);
+
+    // Initialize particle manager (inside game container)
     const particleContainer = new PIXI.Container();
-    app.stage.addChild(particleContainer);
+    gameContainer.addChild(particleContainer);
     const particleManager = new ParticleManager(particleContainer);
+
+    // Initialize transition manager for room transitions
+    const transitionManager = new TransitionManager(1920, 640);
 
     // Track previous state for change detection
     let previousState: GameState | null = null;
+
+    // Track previous room position for transition detection
+    let previousRoomPosition: [number, number] | null = null;
 
     // Track session info for spectator overlay
     let currentSessionId: string = '';
@@ -90,6 +101,19 @@ async function main() {
             uiManager.showGame(info.role === 'spectator');
         },
         onGameState: (state: GameState) => {
+            // Detect room transition
+            const currentRoomPosition = state.session?.roomPosition;
+            if (previousRoomPosition && currentRoomPosition) {
+                if (previousRoomPosition[0] !== currentRoomPosition[0] ||
+                    previousRoomPosition[1] !== currentRoomPosition[1]) {
+                    // Room transition detected - trigger slide effect
+                    transitionManager.startTransition(previousRoomPosition, currentRoomPosition);
+                    // Clear interpolation targets for smooth new room entry
+                    interpolationManager.clear();
+                }
+            }
+            previousRoomPosition = currentRoomPosition ?? null;
+
             // Update interpolation targets
             for (const entity of state.entities) {
                 if (entity.components.position) {
@@ -154,6 +178,12 @@ async function main() {
         animationManager.update(dt);
         interpolationManager.update(dt);
         particleManager.update(dt);
+        transitionManager.update(dt);
+
+        // Apply transition offset to game container
+        const offset = transitionManager.getOffset();
+        gameContainer.x = offset.x;
+        gameContainer.y = offset.y;
 
         // Apply interpolated positions to sprites
         const sprites = renderer.getEntitySprites();
@@ -165,8 +195,8 @@ async function main() {
             }
         }
 
-        // Spawn trails for projectiles
-        if (previousState) {
+        // Spawn trails for projectiles (only when not transitioning)
+        if (previousState && !transitionManager.isTransitioning()) {
             for (const entity of previousState.entities) {
                 if (entity.type === 'projectile' || entity.type === 'enemy_projectile') {
                     const pos = interpolationManager.getPosition(entity.id);
