@@ -31,7 +31,12 @@ class InputMessage(Message):
 
 @dataclass
 class GameStateMessage(Message):
-    """Server response with session info."""
+    """Server response with session info.
+
+    Note: This message type is "session_info" on the wire (not "game_state").
+    This is the initial handshake response sent to clients after connection,
+    not used for ongoing game state updates during gameplay.
+    """
     session_id: str
     role: str
     status: str
@@ -41,16 +46,28 @@ class GameStateMessage(Message):
 
 
 def parse_message(json_str: str) -> Union[ConnectMessage, InputMessage]:
-    """Parse JSON string into message object."""
-    data = json.loads(json_str)
+    """Parse JSON string into message object.
+
+    Raises:
+        ValueError: If JSON is invalid or message type is unknown.
+    """
+    try:
+        data = json.loads(json_str)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Invalid JSON: {e}")
+
     msg_type = data.get("type")
 
     if msg_type == "connect":
+        if "role" not in data:
+            raise ValueError("ConnectMessage missing required field 'role'")
         return ConnectMessage(
             role=data["role"],
             session_id=data.get("sessionId")
         )
     elif msg_type == "input":
+        if "key" not in data:
+            raise ValueError("InputMessage missing required field 'key'")
         return InputMessage(key=data["key"])
     else:
         raise ValueError(f"Unknown message type: {msg_type}")
@@ -64,5 +81,16 @@ def serialize_message(msg: Message) -> str:
             "sessionId": msg.session_id,
             "role": msg.role,
             "status": msg.status
+        })
+    elif isinstance(msg, ConnectMessage):
+        return json.dumps({
+            "type": msg.type,
+            "role": msg.role,
+            "sessionId": msg.session_id
+        })
+    elif isinstance(msg, InputMessage):
+        return json.dumps({
+            "type": msg.type,
+            "key": msg.key
         })
     raise ValueError(f"Cannot serialize {type(msg)}")
