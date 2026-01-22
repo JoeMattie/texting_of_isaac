@@ -8,8 +8,6 @@ export class GameRenderer {
     private app: PIXI.Application;
     private spriteManager: SpriteManager;
     private entitySprites: Map<number, PIXI.Sprite> = new Map();
-    private gridWidth: number = 60;
-    private gridHeight: number = 20;
     private tileSize: number = 32;
 
     constructor(app: PIXI.Application, spriteManager: SpriteManager) {
@@ -32,9 +30,17 @@ export class GameRenderer {
 
             const sprite = this.getOrCreateSprite(entity.id, entity.type as EntityType);
             if (sprite && entity.components.position) {
-                // Convert grid position to pixel position
-                sprite.x = entity.components.position.x * this.tileSize;
-                sprite.y = entity.components.position.y * this.tileSize;
+                const x = entity.components.position.x;
+                const y = entity.components.position.y;
+
+                // Validate position values to prevent rendering issues
+                if (isFinite(x) && isFinite(y)) {
+                    // Convert grid position to pixel position
+                    sprite.x = x * this.tileSize;
+                    sprite.y = y * this.tileSize;
+                } else {
+                    console.warn(`Invalid position for entity ${entity.id}: (${x}, ${y})`);
+                }
             }
         }
 
