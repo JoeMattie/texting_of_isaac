@@ -14,6 +14,16 @@ export interface SessionInfo {
 }
 
 /**
+ * Information about an active game session for spectators.
+ */
+export interface SessionListItem {
+    sessionId: string;
+    playerHealth: number;
+    floor: number;
+    spectatorCount: number;
+}
+
+/**
  * Complete game state sent from server every frame.
  */
 export interface GameState {
@@ -58,6 +68,7 @@ export interface GameState {
 export type NetworkEventHandler = {
     onSessionInfo?: (info: SessionInfo) => void;
     onGameState?: (state: GameState) => void;
+    onSessionList?: (sessions: SessionListItem[]) => void;
     onDisconnect?: () => void;
     onError?: (error: string) => void;
 };
@@ -144,6 +155,8 @@ export class NetworkClient {
             this.handlers.onSessionInfo?.(info);
         } else if (data.type === 'error') {
             this.handlers.onError?.(data.message);
+        } else if (data.type === 'session_list') {
+            this.handlers.onSessionList?.(data.sessions);
         } else if (data.frame && data.entities) {
             // Game state update (has frame and entities fields)
             this.handlers.onGameState?.(data as GameState);
@@ -168,6 +181,13 @@ export class NetworkClient {
             action
         };
         this.send(inputMessage);
+    }
+
+    /**
+     * Request list of active sessions for spectating.
+     */
+    requestSessionList(): void {
+        this.send({ type: 'list_sessions' });
     }
 
     /**
