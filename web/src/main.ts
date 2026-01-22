@@ -6,6 +6,7 @@ import { SpriteManager } from './sprites';
 import { GameRenderer } from './renderer';
 import { UIManager } from './ui';
 import { AnimationManager, EntityType } from './animations';
+import { InterpolationManager } from './interpolation';
 
 async function main() {
     console.log('Texting of Isaac - Web Edition');
@@ -44,6 +45,9 @@ async function main() {
     // Initialize animation manager
     const animationManager = new AnimationManager();
 
+    // Initialize interpolation manager
+    const interpolationManager = new InterpolationManager();
+
     // Initialize UI manager
     const uiManager = new UIManager();
 
@@ -58,13 +62,22 @@ async function main() {
             uiManager.updateSessionInfo(info);
         },
         onGameState: (state: GameState) => {
+            // Update interpolation targets
+            for (const entity of state.entities) {
+                if (entity.components.position) {
+                    const pixelX = entity.components.position.x * 32; // tileSize
+                    const pixelY = entity.components.position.y * 32;
+                    interpolationManager.setTarget(entity.id, pixelX, pixelY);
+                }
+            }
+
             // Detect state changes for triggered animations
             if (previousState) {
-                detectStateChanges(previousState, state, animationManager);
+                detectStateChanges(previousState, state, animationManager, interpolationManager);
             }
             previousState = state;
 
-            // Render game state
+            // Render game state (creates sprites)
             renderer.render(state);
 
             // Apply animations after render
@@ -88,9 +101,21 @@ async function main() {
     // Connect as player
     networkClient.connect('player');
 
-    // Animation update loop
+    // Animation and interpolation update loop
     app.ticker.add((ticker) => {
-        animationManager.update(ticker.deltaMS / 1000);
+        const dt = ticker.deltaMS / 1000;
+        animationManager.update(dt);
+        interpolationManager.update(dt);
+
+        // Apply interpolated positions to sprites
+        const sprites = renderer.getEntitySprites();
+        for (const [entityId, sprite] of sprites) {
+            const pos = interpolationManager.getPosition(entityId);
+            if (pos) {
+                sprite.x = pos.currentX;
+                sprite.y = pos.currentY;
+            }
+        }
     });
 
     // Setup keyboard input (WASD for movement, arrows for shooting)
@@ -116,8 +141,14 @@ async function main() {
  * @param prev - Previous game state
  * @param curr - Current game state
  * @param animationManager - Animation manager instance
+ * @param interpolationManager - Interpolation manager instance
  */
-function detectStateChanges(prev: GameState, curr: GameState, animationManager: AnimationManager): void {
+function detectStateChanges(
+    prev: GameState,
+    curr: GameState,
+    animationManager: AnimationManager,
+    interpolationManager: InterpolationManager
+): void {
     // Detect player hit
     if (prev.player && curr.player) {
         const prevHealth = prev.player.components.health?.current;
@@ -153,6 +184,7 @@ function detectStateChanges(prev: GameState, curr: GameState, animationManager: 
     for (const prevEntity of prev.entities) {
         if (!currIds.has(prevEntity.id)) {
             animationManager.removeEntity(prevEntity.id);
+            interpolationManager.removeEntity(prevEntity.id);
         }
     }
 }
