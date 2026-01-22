@@ -127,6 +127,13 @@ function detectStateChanges(prev: GameState, curr: GameState, animationManager: 
         }
     }
 
+    // Detect player shooting (new player projectiles)
+    const prevPlayerProjectiles = prev.entities.filter(e => e.type === 'projectile').length;
+    const currPlayerProjectiles = curr.entities.filter(e => e.type === 'projectile').length;
+    if (currPlayerProjectiles > prevPlayerProjectiles && curr.player) {
+        animationManager.triggerPulse(curr.player.id);
+    }
+
     // Detect enemy hits
     for (const currEntity of curr.entities) {
         if (currEntity.type.startsWith('enemy_')) {
