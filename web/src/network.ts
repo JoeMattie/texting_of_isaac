@@ -156,6 +156,11 @@ export class NetworkClient {
      * @param key - Key that was pressed (e.g., 'w', 'ArrowUp')
      */
     sendInput(key: string): void {
+        // Only allow players to send input, silently ignore for spectators
+        if (this.role !== 'player') {
+            return;
+        }
+
         const inputMessage = {
             type: 'input',
             key
@@ -173,14 +178,23 @@ export class NetworkClient {
     }
 
     /**
+     * Calculate reconnection delay with exponential backoff.
+     * Starts at 2000ms and increases by 1.5x each attempt, capped at 10000ms.
+     */
+    private getReconnectDelay(): number {
+        return Math.min(2000 * Math.pow(1.5, this.reconnectAttempts), 10000);
+    }
+
+    /**
      * Attempt to reconnect to the server.
      */
     private attemptReconnect(): void {
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
             this.reconnectAttempts++;
+            const delay = this.getReconnectDelay();
             this.reconnectTimeoutId = window.setTimeout(() => {
                 this.connect(this.role, this.sessionId);
-            }, 2000);
+            }, delay);
         } else {
             this.handlers.onError?.('Failed to reconnect after multiple attempts');
         }
