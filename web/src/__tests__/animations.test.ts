@@ -3,7 +3,9 @@ import {
   ANIMATION_CONFIGS,
   EntityType,
   calculateBobOffset,
-  calculatePulseScale
+  calculatePulseScale,
+  calculateRotation,
+  calculateWobble
 } from '../animations';
 
 describe('Animation Configs', () => {
@@ -87,5 +89,43 @@ describe('calculatePulseScale', () => {
     const quarterPeriod = 0.25;
     const scale = calculatePulseScale(quarterPeriod, { minScale: 0.8, maxScale: 1.2, frequency });
     expect(scale).toBeCloseTo(1.2, 5);
+  });
+});
+
+describe('calculateRotation', () => {
+  it('should return 0 at time 0', () => {
+    const rotation = calculateRotation(0, { speed: 360 });
+    expect(rotation).toBeCloseTo(0, 5);
+  });
+
+  it('should return speed after 1 second', () => {
+    const rotation = calculateRotation(1, { speed: 360 });
+    expect(rotation).toBeCloseTo(360, 5);
+  });
+
+  it('should accumulate over time', () => {
+    const rotation = calculateRotation(2.5, { speed: 90 });
+    expect(rotation).toBeCloseTo(225, 5);
+  });
+});
+
+describe('calculateWobble', () => {
+  it('should return 0 at time 0', () => {
+    const angle = calculateWobble(0, { angle: 15, frequency: 8 });
+    expect(angle).toBeCloseTo(0, 5);
+  });
+
+  it('should return max angle at quarter period', () => {
+    const frequency = 8;
+    const quarterPeriod = 1 / (4 * frequency);
+    const angle = calculateWobble(quarterPeriod, { angle: 15, frequency });
+    expect(angle).toBeCloseTo(15, 5);
+  });
+
+  it('should return negative max angle at 3/4 period', () => {
+    const frequency = 8;
+    const threeQuarterPeriod = 3 / (4 * frequency);
+    const angle = calculateWobble(threeQuarterPeriod, { angle: 15, frequency });
+    expect(angle).toBeCloseTo(-15, 5);
   });
 });

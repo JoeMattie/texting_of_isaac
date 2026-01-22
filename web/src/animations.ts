@@ -134,3 +134,23 @@ export function calculatePulseScale(elapsed: number, config: PulseConfig): numbe
   const amplitude = (config.maxScale - config.minScale) / 2;
   return midpoint + amplitude * Math.sin(elapsed * config.frequency * 2 * Math.PI);
 }
+
+/**
+ * Calculate rotation angle at given time.
+ * @param elapsed - Time in seconds
+ * @param config - Rotation configuration
+ * @returns Rotation in degrees
+ */
+export function calculateRotation(elapsed: number, config: RotateConfig): number {
+  return elapsed * config.speed;
+}
+
+/**
+ * Calculate wobble angle at given time (oscillating rotation).
+ * @param elapsed - Time in seconds
+ * @param config - Wobble configuration
+ * @returns Rotation offset in degrees
+ */
+export function calculateWobble(elapsed: number, config: WobbleConfig): number {
+  return config.angle * Math.sin(elapsed * config.frequency * 2 * Math.PI);
+}
