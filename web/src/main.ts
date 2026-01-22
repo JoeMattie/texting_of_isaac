@@ -55,18 +55,40 @@ async function main() {
     app.stage.addChild(particleContainer);
     const particleManager = new ParticleManager(particleContainer);
 
-    // Initialize UI manager
-    const uiManager = new UIManager();
-
     // Track previous state for change detection
     let previousState: GameState | null = null;
 
+    // Track session info for spectator overlay
+    let currentSessionId: string = '';
+    let gameStartTime: number = Date.now();
+
     // Connect to game server
     const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8765';
-    const networkClient = new NetworkClient(wsUrl, {
+    let networkClient: NetworkClient;
+
+    // Initialize UI manager with callbacks
+    const uiManager = new UIManager(document.body, {
+        onPlay: () => {
+            networkClient.connect('player');
+            uiManager.showGame(false);
+        },
+        onSpectate: () => {
+            // Request session list - connect temporarily to get list
+            networkClient.requestSessionList();
+        },
+        onJoinSession: (sessionId: string) => {
+            networkClient.connect('spectator', sessionId);
+            uiManager.showGame(true);
+        }
+    });
+
+    networkClient = new NetworkClient(wsUrl, {
         onSessionInfo: (info) => {
             console.log('Session established:', info);
+            currentSessionId = info.sessionId;
+            gameStartTime = Date.now();
             uiManager.updateSessionInfo(info);
+            uiManager.showGame(info.role === 'spectator');
         },
         onGameState: (state: GameState) => {
             // Update interpolation targets
@@ -92,8 +114,30 @@ async function main() {
 
             // Update UI
             if (state.ui) {
-                uiManager.updateUI(state.ui);
+                uiManager.updateHUD({
+                    health: state.ui.health,
+                    coins: state.ui.currency.coins,
+                    bombs: state.ui.currency.bombs,
+                    items: state.ui.items,
+                    floor: state.room?.position?.[1] ?? 1  // Use room position Y as floor, default 1
+                });
             }
+
+            // Update spectator overlay if applicable
+            if (state.player && state.ui) {
+                const timePlayed = Math.floor((Date.now() - gameStartTime) / 1000);
+                uiManager.updateSpectatorOverlay({
+                    sessionId: currentSessionId,
+                    playerHealth: state.player.components.health?.current ?? 0,
+                    floor: state.room?.position?.[1] ?? 1,
+                    items: state.ui.items,
+                    timePlayed,
+                    spectatorCount: 0  // TODO: Get from server
+                });
+            }
+        },
+        onSessionList: (sessions) => {
+            uiManager.showSessionList(sessions);
         },
         onDisconnect: () => {
             console.log('Disconnected from server');
@@ -104,9 +148,6 @@ async function main() {
             uiManager.showError(error);
         }
     });
-
-    // Connect as player
-    networkClient.connect('player');
 
     // Animation and interpolation update loop
     app.ticker.add((ticker) => {
