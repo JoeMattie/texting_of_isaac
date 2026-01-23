@@ -109,6 +109,21 @@ class GameSession:
         # Set input on the InputSystem
         self.engine.input_system.set_input(move_x, move_y, shoot_x, shoot_y, bomb_pressed)
 
+    def _export_minimap(self) -> list:
+        """Export visited rooms for minimap display."""
+        if not self.dungeon:
+            return []
+        rooms = []
+        for pos, room in self.dungeon.rooms.items():
+            if room.visited:
+                rooms.append({
+                    'x': pos[0],
+                    'y': pos[1],
+                    'type': room.room_type.value,
+                    'cleared': room.cleared
+                })
+        return rooms
+
     def get_game_state(self) -> dict:
         """Export current game state as JSON-serializable dict."""
         if self.engine:
@@ -126,7 +141,8 @@ class GameSession:
                 'floor': self.current_floor,
                 'roomPosition': room_position,
                 'gameState': game_state,
-                'spectatorCount': len(self.spectator_clients)
+                'spectatorCount': len(self.spectator_clients),
+                'minimap': self._export_minimap()
             }
             return state
         return {}

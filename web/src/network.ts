@@ -65,6 +65,12 @@ export interface GameState {
         roomPosition: [number, number] | null;
         gameState: 'playing' | 'victory' | 'game_over';
         spectatorCount: number;
+        minimap: Array<{
+            x: number;
+            y: number;
+            type: string;
+            cleared: boolean;
+        }>;
     };
 }
 

@@ -11,6 +11,7 @@ import { InterpolationManager } from './interpolation';
 import { ParticleManager } from './particles';
 import { TransitionManager } from './transitions';
 import { GameOverlay } from './ui/GameOverlay';
+import { Minimap } from './ui/Minimap';
 
 async function main() {
     console.log('Texting of Isaac - Web Edition');
@@ -106,8 +107,12 @@ async function main() {
             networkClient.disconnect();
             uiManager.showLanding();
             gameOverlay.hide();
+            minimap.hide();
         }
     });
+
+    // Initialize minimap
+    const minimap = new Minimap(document.body);
 
     networkClient = new NetworkClient(wsUrl, {
         onSessionInfo: (info) => {
@@ -187,6 +192,14 @@ async function main() {
                     timePlayed,
                     spectatorCount: state.session?.spectatorCount ?? 0
                 });
+            }
+
+            // Update minimap
+            if (state.session?.minimap) {
+                minimap.update(state.session.minimap, state.session.roomPosition);
+                if (!minimap.isVisible()) {
+                    minimap.show();
+                }
             }
         },
         onSessionList: (sessions) => {
