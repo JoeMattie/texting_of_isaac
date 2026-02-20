@@ -17,6 +17,7 @@ from src.entities.player import create_player
 from src.entities.enemies import create_enemy
 from src.config import Config
 from src.systems.boss_health_bar import BossHealthBarSystem
+from src.systems.menu import MenuResult, MenuSystem
 
 
 def create_game_display(engine: GameEngine, boss_health_bar_system: BossHealthBarSystem) -> Layout:
@@ -92,6 +93,7 @@ class InputHandler:
         self.shoot_x = 0
         self.shoot_y = 0
         self.quit_pressed = False
+        self.pause_pressed = False
         self.pressed_keys = set()
 
         # Save terminal settings (only if stdin is a terminal)
@@ -139,10 +141,17 @@ class InputHandler:
         # Read new input
         self.read_input()
 
+        # Reset one-shot flags
+        self.pause_pressed = False
+
         # Check quit
         if 'q' in self.pressed_keys:
             self.quit_pressed = True
             return
+
+        # Check pause
+        if 'p' in self.pressed_keys or '\x1b' in self.pressed_keys:
+            self.pause_pressed = True
 
         # Reset movement
         self.move_x = 0
@@ -177,12 +186,19 @@ class InputHandler:
 def main():
     """Run the main game loop."""
     console = Console()
+    menu_system = MenuSystem(console)
+
+    # Show main menu before starting
+    result = menu_system.show_main_menu()
+    if result == MenuResult.QUIT:
+        console.print("[green]Thanks for playing![/green]")
+        return
 
     # Create engine and entities
     engine = GameEngine()
 
     # Create player at center
-    player = create_player(
+    create_player(
         engine.world_name,
         Config.ROOM_WIDTH / 2,
         Config.ROOM_HEIGHT / 2
@@ -204,10 +220,7 @@ def main():
     frame_time = 1.0 / Config.FPS
     last_time = time.time()
 
-    console.clear()
-    console.print("[cyan]Starting Texting of Isaac...[/cyan]")
-    console.print("[dim]Press WASD to move, arrow keys to shoot, Q to quit[/dim]")
-    time.sleep(1.0)
+    paused = False
 
     try:
         # Use Live display to prevent flashing
@@ -221,20 +234,22 @@ def main():
                 # Update input
                 input_handler.update()
 
+                # Handle pause toggle
+                if input_handler.pause_pressed and not paused:
+                    paused = True
+                    # Close Live context to let the menu render cleanly
+                    live.stop()
+                    pause_result = menu_system.show_pause_menu()
+                    if pause_result == MenuResult.QUIT:
+                        break
+                    paused = False
+                    live.start()
+                    last_time = time.time()
+                    continue
+
                 # Check for floor transitions
                 if engine.floor_transition_system.pending_floor_transition:
-                    # Floor transition detected
                     target_floor = engine.floor_transition_system.target_floor
-
-                    # In a full game with RoomManager integration, you would do:
-                    # room_manager.advance_to_next_floor(target_floor)
-                    # This would:
-                    # - Increment current_floor
-                    # - Generate new dungeon
-                    # - Clear entities except player
-                    # - Reset player position
-                    # - Spawn new room contents
-
                     console.print(f"[yellow]Floor transition to floor {target_floor}![/yellow]")
                     engine.floor_transition_system.reset_transition()
 
