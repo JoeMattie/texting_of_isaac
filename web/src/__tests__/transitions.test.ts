@@ -206,4 +206,51 @@ describe('TransitionManager', () => {
             expect(state.timeRemaining).toBe(0.5);
         });
     });
+
+    describe('getFadeAlpha (fade-to-black)', () => {
+        it('returns 0 when inactive', () => {
+            expect(manager.getFadeAlpha()).toBe(0);
+        });
+
+        it('returns 0 at start of slide-out', () => {
+            manager.startTransition([0, 0], [1, 0]);
+            // progress=0 → eased=0 → alpha=0
+            expect(manager.getFadeAlpha()).toBeCloseTo(0, 5);
+        });
+
+        it('returns 1 at end of slide-out', () => {
+            manager.startTransition([0, 0], [1, 0]);
+            manager.update(0.15);  // complete slide-out, now at start of slide-in
+            // At start of slide-in (progress=0) → 1 - eased(0) = 1
+            expect(manager.getFadeAlpha()).toBeCloseTo(1, 5);
+        });
+
+        it('returns 0 after full transition completes', () => {
+            manager.startTransition([0, 0], [1, 0]);
+            manager.update(0.15);  // slide-out
+            manager.update(0.15);  // slide-in
+            expect(manager.getFadeAlpha()).toBe(0);
+        });
+
+        it('fades from 0 to 1 during slide-out', () => {
+            manager.startTransition([0, 0], [1, 0]);
+            const alphaStart = manager.getFadeAlpha();
+            manager.update(0.075);  // half of slide-out
+            const alphaMid = manager.getFadeAlpha();
+            expect(alphaStart).toBeCloseTo(0, 5);
+            expect(alphaMid).toBeGreaterThan(0);
+            expect(alphaMid).toBeLessThan(1);
+        });
+
+        it('fades from 1 to 0 during slide-in', () => {
+            manager.startTransition([0, 0], [1, 0]);
+            manager.update(0.15);  // complete slide-out, start slide-in
+            const alphaStart = manager.getFadeAlpha();  // ~1
+            manager.update(0.075);  // half of slide-in
+            const alphaMid = manager.getFadeAlpha();
+            expect(alphaStart).toBeCloseTo(1, 5);
+            expect(alphaMid).toBeGreaterThan(0);
+            expect(alphaMid).toBeLessThan(1);
+        });
+    });
 });

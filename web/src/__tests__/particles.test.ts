@@ -33,6 +33,14 @@ describe('PARTICLE_COLORS', () => {
         expect(PARTICLE_COLORS.item).toBe('#ffdd44');
     });
 
+    it('has heart color as pink', () => {
+        expect(PARTICLE_COLORS.heart).toBe('#ff6688');
+    });
+
+    it('has coin color as gold', () => {
+        expect(PARTICLE_COLORS.coin).toBe('#ffcc00');
+    });
+
     it('has door color as white', () => {
         expect(PARTICLE_COLORS.door).toBe('#ffffff');
     });
@@ -59,9 +67,25 @@ describe('EMITTER_CONFIGS', () => {
         expect(EMITTER_CONFIGS.trail.lifetime).toBeDefined();
     });
 
-    it('has explosion config', () => {
+    it('has explosion config with more particles than hitSpark', () => {
         expect(EMITTER_CONFIGS.explosion).toBeDefined();
-        expect(EMITTER_CONFIGS.explosion.lifetime).toBeDefined();
+        expect(EMITTER_CONFIGS.explosion.maxParticles).toBeGreaterThanOrEqual(20);
+    });
+
+    it('has hitSpark config', () => {
+        expect(EMITTER_CONFIGS.hitSpark).toBeDefined();
+        expect(EMITTER_CONFIGS.hitSpark.lifetime).toBeDefined();
+        expect(EMITTER_CONFIGS.hitSpark.maxParticles).toBeLessThan(EMITTER_CONFIGS.explosion.maxParticles);
+    });
+
+    it('has heartPickup config', () => {
+        expect(EMITTER_CONFIGS.heartPickup).toBeDefined();
+        expect(EMITTER_CONFIGS.heartPickup.lifetime).toBeDefined();
+    });
+
+    it('has coinPickup config', () => {
+        expect(EMITTER_CONFIGS.coinPickup).toBeDefined();
+        expect(EMITTER_CONFIGS.coinPickup.lifetime).toBeDefined();
     });
 
     it('has sparkle config', () => {
@@ -94,6 +118,24 @@ describe('ParticleManager', () => {
         expect(() => manager.spawnExplosion(100, 100, 'enemy_chaser')).not.toThrow();
     });
 
+    it('spawnHitSpark does not throw', () => {
+        const container = new MockContainer();
+        const manager = new ParticleManager(container as unknown as import('pixi.js').Container);
+        expect(() => manager.spawnHitSpark(100, 100, 'enemy_projectile')).not.toThrow();
+    });
+
+    it('spawnHeartPickup does not throw', () => {
+        const container = new MockContainer();
+        const manager = new ParticleManager(container as unknown as import('pixi.js').Container);
+        expect(() => manager.spawnHeartPickup(100, 100)).not.toThrow();
+    });
+
+    it('spawnCoinPickup does not throw', () => {
+        const container = new MockContainer();
+        const manager = new ParticleManager(container as unknown as import('pixi.js').Container);
+        expect(() => manager.spawnCoinPickup(100, 100)).not.toThrow();
+    });
+
     it('spawnSparkle does not throw', () => {
         const container = new MockContainer();
         const manager = new ParticleManager(container as unknown as import('pixi.js').Container);
@@ -110,5 +152,17 @@ describe('ParticleManager', () => {
         const container = new MockContainer();
         const manager = new ParticleManager(container as unknown as import('pixi.js').Container);
         expect(() => manager.update(0.016)).not.toThrow();
+    });
+
+    it('update handles multiple calls without throwing', () => {
+        const container = new MockContainer();
+        const manager = new ParticleManager(container as unknown as import('pixi.js').Container);
+        manager.spawnExplosion(100, 100, 'enemy_chaser');
+        manager.spawnHitSpark(50, 50, 'projectile');
+        expect(() => {
+            for (let i = 0; i < 10; i++) {
+                manager.update(0.1);
+            }
+        }).not.toThrow();
     });
 });

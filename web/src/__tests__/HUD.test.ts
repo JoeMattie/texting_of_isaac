@@ -62,4 +62,51 @@ describe('HUD', () => {
         hud.destroy();
         expect(container.querySelector('.hud')).toBeNull();
     });
+
+    it('animateDamage adds hud-shake class to health element', () => {
+        const hud = new HUD(container);
+        hud.update({ health: { current: 3, max: 3 }, coins: 0, bombs: 0, items: [], floor: 1 });
+        hud.animateDamage();
+        const healthEl = container.querySelector('.hud-health') as HTMLElement;
+        expect(healthEl?.classList.contains('hud-shake')).toBe(true);
+    });
+
+    it('animateCoinPickup adds hud-bounce class to coin element', () => {
+        const hud = new HUD(container);
+        hud.animateCoinPickup();
+        const coinsEl = container.querySelector('.hud-coins') as HTMLElement;
+        expect(coinsEl?.classList.contains('hud-bounce')).toBe(true);
+    });
+
+    it('animateBombPickup adds hud-bounce class to bomb element', () => {
+        const hud = new HUD(container);
+        hud.animateBombPickup();
+        const bombsEl = container.querySelector('.hud-bombs') as HTMLElement;
+        expect(bombsEl?.classList.contains('hud-bounce')).toBe(true);
+    });
+
+    it('automatically triggers animateDamage when health decreases', () => {
+        const hud = new HUD(container);
+        hud.update({ health: { current: 3, max: 3 }, coins: 0, bombs: 0, items: [], floor: 1 });
+        // Take damage
+        hud.update({ health: { current: 2, max: 3 }, coins: 0, bombs: 0, items: [], floor: 1 });
+        const healthEl = container.querySelector('.hud-health') as HTMLElement;
+        expect(healthEl?.classList.contains('hud-shake')).toBe(true);
+    });
+
+    it('automatically triggers animateCoinPickup when coins increase', () => {
+        const hud = new HUD(container);
+        hud.update({ health: { current: 3, max: 3 }, coins: 5, bombs: 0, items: [], floor: 1 });
+        hud.update({ health: { current: 3, max: 3 }, coins: 6, bombs: 0, items: [], floor: 1 });
+        const coinsEl = container.querySelector('.hud-coins') as HTMLElement;
+        expect(coinsEl?.classList.contains('hud-bounce')).toBe(true);
+    });
+
+    it('automatically triggers animateBombPickup when bombs increase', () => {
+        const hud = new HUD(container);
+        hud.update({ health: { current: 3, max: 3 }, coins: 0, bombs: 1, items: [], floor: 1 });
+        hud.update({ health: { current: 3, max: 3 }, coins: 0, bombs: 2, items: [], floor: 1 });
+        const bombsEl = container.querySelector('.hud-bombs') as HTMLElement;
+        expect(bombsEl?.classList.contains('hud-bounce')).toBe(true);
+    });
 });

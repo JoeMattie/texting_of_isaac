@@ -15,6 +15,11 @@ export class HUD {
     private itemsEl: HTMLElement;
     private floorEl: HTMLElement;
 
+    /** Previous values to detect changes for animations */
+    private prevHealth: number = -1;
+    private prevCoins: number = -1;
+    private prevBombs: number = -1;
+
     constructor(container: HTMLElement) {
         this.container = container;
         this.element = document.createElement('div');
@@ -68,15 +73,31 @@ export class HUD {
     }
 
     update(data: HUDData): void {
-        // Health hearts
+        // Health hearts – detect damage for shake animation
+        const healthChanged = this.prevHealth !== -1 && data.health.current < this.prevHealth;
+        if (healthChanged) {
+            this.animateDamage();
+        }
+        this.prevHealth = data.health.current;
+
         const fullHearts = '<span style="color: #ff0000">♥</span>'.repeat(data.health.current);
         const emptyHearts = '<span style="color: #666666">♡</span>'.repeat(data.health.max - data.health.current);
         this.healthEl.innerHTML = fullHearts + emptyHearts;
 
-        // Coins
+        // Coins – detect pickup for bounce animation
+        const coinsChanged = this.prevCoins !== -1 && data.coins > this.prevCoins;
+        if (coinsChanged) {
+            this.animateCoinPickup();
+        }
+        this.prevCoins = data.coins;
         this.coinsEl.textContent = `$ ${data.coins}`;
 
-        // Bombs
+        // Bombs – detect pickup for bounce animation
+        const bombsChanged = this.prevBombs !== -1 && data.bombs > this.prevBombs;
+        if (bombsChanged) {
+            this.animateBombPickup();
+        }
+        this.prevBombs = data.bombs;
         this.bombsEl.textContent = `B ${data.bombs}`;
 
         // Items (show up to 6)
@@ -85,6 +106,27 @@ export class HUD {
 
         // Floor
         this.floorEl.textContent = `F${data.floor}`;
+    }
+
+    /**
+     * Shake the health hearts display – triggered when the player takes damage.
+     */
+    animateDamage(): void {
+        this.triggerAnimation(this.healthEl, 'hud-shake');
+    }
+
+    /**
+     * Bounce the coin counter – triggered when coins are picked up.
+     */
+    animateCoinPickup(): void {
+        this.triggerAnimation(this.coinsEl, 'hud-bounce');
+    }
+
+    /**
+     * Bounce the bomb counter – triggered when bombs are picked up.
+     */
+    animateBombPickup(): void {
+        this.triggerAnimation(this.bombsEl, 'hud-bounce');
     }
 
     show(): void {
@@ -97,5 +139,24 @@ export class HUD {
 
     destroy(): void {
         this.element.remove();
+    }
+
+    /**
+     * Apply a CSS animation class to an element, resetting it first so it
+     * re-triggers even if the same animation fires multiple times quickly.
+     */
+    private triggerAnimation(el: HTMLElement, animClass: string): void {
+        // Remove class to reset animation
+        el.classList.remove(animClass);
+        // Force reflow so removal takes effect before re-adding
+        void el.offsetWidth;
+        el.classList.add(animClass);
+
+        // Auto-remove after animation completes (300ms)
+        const onEnd = () => {
+            el.classList.remove(animClass);
+            el.removeEventListener('animationend', onEnd);
+        };
+        el.addEventListener('animationend', onEnd);
     }
 }
