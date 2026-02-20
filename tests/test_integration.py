@@ -364,11 +364,9 @@ def test_full_room_transition():
     assert door_before.leads_to == room2_pos
     assert door_before.locked is False  # Start room door should be unlocked
 
-    # Create player at north door position
+    # Create player at north door position (same world as the doors)
     door_pos = esper.component_for_entity(door_ent_before, Position)
-    # Note: create_player will switch worlds, but we need to be in the same world as the door
-    # The door was spawned in "main" by spawn_room_contents, so we create player there too
-    player = create_player("main", door_pos.x, door_pos.y)
+    player = create_player("test_room_transition", door_pos.x, door_pos.y)
 
     # Verify player is in room 1
     assert room_manager.current_position == room1_pos

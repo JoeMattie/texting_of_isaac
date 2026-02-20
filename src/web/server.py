@@ -3,6 +3,7 @@
 import asyncio
 import json
 import websockets
+import websockets.asyncio.server
 from typing import Optional
 from src.web.session_manager import SessionManager, GameSession
 from src.web.protocol import parse_message, ConnectMessage, InputMessage, serialize_message, GameStateMessage, ListSessionsMessage, SessionListMessage
@@ -42,7 +43,7 @@ class GameServer:
 
             await asyncio.sleep(frame_time)
 
-    async def handle_client(self, websocket: websockets.WebSocketServerProtocol):
+    async def handle_client(self, websocket: websockets.asyncio.server.ServerConnection):
         """Handle a client connection."""
         session: Optional[GameSession] = None
         role = None

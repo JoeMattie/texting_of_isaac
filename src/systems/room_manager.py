@@ -38,6 +38,7 @@ class RoomManager(esper.Processor):
         self.current_position = dungeon.start_position
         self.current_room = dungeon.rooms[self.current_position]
         self.current_floor = current_floor
+        self.world_name = esper.current_world
 
         # Reveal start room in minimap
         self._reveal_current_room()
@@ -68,7 +69,7 @@ class RoomManager(esper.Processor):
 
         # Spawn doors for each connection
         for direction, leads_to in self.current_room.doors.items():
-            spawn_door("main", direction, leads_to, locked=should_lock)
+            spawn_door(self.world_name, direction, leads_to, locked=should_lock)
 
         # Spawn shop items if shop room
         if self.current_room.room_type == RoomType.SHOP:
@@ -177,8 +178,7 @@ class RoomManager(esper.Processor):
         """
         # Call the standalone reward spawning function
         # Note: We need to determine which world to spawn in
-        # For now, use "main" world as default
-        _spawn_room_clear_reward("main")
+        _spawn_room_clear_reward(self.world_name)
 
     def _reveal_current_room(self) -> None:
         """Reveal current room in minimap."""
@@ -208,7 +208,7 @@ class RoomManager(esper.Processor):
 
         for i, item_name in enumerate(item_names):
             x_pos = spacing * (i + 1)
-            create_shop_item("main", item_name, x_pos, y_pos)
+            create_shop_item(self.world_name, item_name, x_pos, y_pos)
 
     def _spawn_enemies(self) -> None:
         """Spawn enemies in current room with floor scaling."""
@@ -229,7 +229,7 @@ class RoomManager(esper.Processor):
                     x += 15
 
                 # Create enemy with floor scaling
-                create_enemy("main", enemy_type, x, y, floor=self.current_floor)
+                create_enemy(self.world_name, enemy_type, x, y, floor=self.current_floor)
 
     def _spawn_boss(self) -> None:
         """Spawn boss in current room based on current floor."""
@@ -246,7 +246,7 @@ class RoomManager(esper.Processor):
         center_x = Config.ROOM_WIDTH / 2
         center_y = Config.ROOM_HEIGHT / 2
 
-        create_boss("main", boss_type, center_x, center_y)
+        create_boss(self.world_name, boss_type, center_x, center_y)
 
     def _spawn_trapdoor(self) -> None:
         """Spawn trapdoor after boss defeat."""
@@ -257,7 +257,7 @@ class RoomManager(esper.Processor):
         # Next floor is current + 1
         next_floor = self.current_floor + 1
 
-        create_trapdoor("main", center_x, center_y, next_floor)
+        create_trapdoor(self.world_name, center_x, center_y, next_floor)
 
     def advance_to_next_floor(self, target_floor: int) -> None:
         """Advance to the next floor.
