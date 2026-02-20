@@ -106,3 +106,108 @@ def test_explosive_tears_item_exists():
     # Verify has damage boost
     assert "damage" in item["stat_modifiers"]
     assert item["stat_modifiers"]["damage"] > 0
+
+
+# --- Tests for expanded item pool ---
+
+def test_total_item_count():
+    """Test that there are at least 15 items in the database."""
+    from src.data.items import ITEM_DEFINITIONS
+
+    assert len(ITEM_DEFINITIONS) >= 15
+
+
+def test_all_items_have_required_fields():
+    """Test every item definition has the required structure."""
+    from src.data.items import ITEM_DEFINITIONS
+
+    required_fields = {"sprite", "color", "stat_modifiers", "special_effects"}
+    for name, item in ITEM_DEFINITIONS.items():
+        for field in required_fields:
+            assert field in item, f"Item '{name}' missing field '{field}'"
+        assert isinstance(item["sprite"], str) and len(item["sprite"]) == 1, \
+            f"Item '{name}' sprite must be a single character"
+        assert isinstance(item["stat_modifiers"], dict), \
+            f"Item '{name}' stat_modifiers must be a dict"
+        assert isinstance(item["special_effects"], list), \
+            f"Item '{name}' special_effects must be a list"
+
+
+def test_soy_milk_item():
+    """Test Soy Milk: fast fire rate, reduced damage."""
+    from src.data.items import ITEM_DEFINITIONS
+
+    assert "soy_milk" in ITEM_DEFINITIONS
+    item = ITEM_DEFINITIONS["soy_milk"]
+    assert item["stat_modifiers"]["fire_rate"] > 0
+    assert item["stat_modifiers"]["damage"] < 0
+
+
+def test_polyphemus_item():
+    """Test Polyphemus: huge damage, slow fire rate."""
+    from src.data.items import ITEM_DEFINITIONS
+
+    assert "polyphemus" in ITEM_DEFINITIONS
+    item = ITEM_DEFINITIONS["polyphemus"]
+    assert item["stat_modifiers"]["damage"] >= 3.0
+    assert item["stat_modifiers"]["fire_rate"] < 0
+
+
+def test_cricket_head_item():
+    """Test Cricket Head: solid damage boost, no special effects."""
+    from src.data.items import ITEM_DEFINITIONS
+
+    assert "cricket_head" in ITEM_DEFINITIONS
+    item = ITEM_DEFINITIONS["cricket_head"]
+    assert item["stat_modifiers"].get("damage", 0) > 0
+    assert item["special_effects"] == []
+
+
+def test_spoon_bender_item():
+    """Test Spoon Bender: grants homing effect."""
+    from src.data.items import ITEM_DEFINITIONS
+
+    assert "spoon_bender" in ITEM_DEFINITIONS
+    item = ITEM_DEFINITIONS["spoon_bender"]
+    assert "homing" in item["special_effects"]
+
+
+def test_inner_eye_item():
+    """Test Inner Eye: multi-shot effect."""
+    from src.data.items import ITEM_DEFINITIONS
+
+    assert "inner_eye" in ITEM_DEFINITIONS
+    item = ITEM_DEFINITIONS["inner_eye"]
+    assert "multi_shot" in item["special_effects"]
+
+
+def test_dead_cat_item():
+    """Test Dead Cat: massive damage, set_hp_1 effect."""
+    from src.data.items import ITEM_DEFINITIONS
+
+    assert "dead_cat" in ITEM_DEFINITIONS
+    item = ITEM_DEFINITIONS["dead_cat"]
+    assert item["stat_modifiers"].get("damage", 0) >= 3.0
+    assert "set_hp_1" in item["special_effects"]
+
+
+def test_new_items_are_spawnable():
+    """Test that new items can be spawned as entities."""
+    from src.entities.items import create_item
+    from src.components.game import Item as ItemComponent
+
+    new_items = [
+        "soy_milk", "polyphemus", "cricket_head",
+        "spoon_bender", "inner_eye", "dead_cat",
+    ]
+
+    world_name = "test_new_items_spawn"
+    esper.switch_world(world_name)
+
+    for item_name in new_items:
+        entity = create_item(world_name, item_name, 5.0, 5.0)
+        assert esper.entity_exists(entity), f"Entity for '{item_name}' was not created"
+        assert esper.has_component(entity, ItemComponent), \
+            f"Entity for '{item_name}' missing Item component"
+        item_comp = esper.component_for_entity(entity, ItemComponent)
+        assert item_comp.name == item_name
