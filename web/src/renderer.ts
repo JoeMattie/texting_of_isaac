@@ -4,6 +4,21 @@ import * as PIXI from 'pixi.js';
 import { SpriteManager, EntityType } from './sprites';
 import { GameState } from './network';
 
+/**
+ * Configurable screen shake presets.
+ * Intensity is 0–1; decay is how fast intensity falls off per second.
+ */
+export const SHAKE_CONFIG = {
+    /** Medium shake – used on player taking damage. */
+    medium: { intensity: 0.6, duration: 0.3 },
+    /** Heavy shake – used on boss hit or major explosion. */
+    heavy: { intensity: 1.0, duration: 0.5 },
+    /** Light shake – minor impacts. */
+    light: { intensity: 0.25, duration: 0.15 },
+} as const;
+
+export type ShakePreset = keyof typeof SHAKE_CONFIG;
+
 export class GameRenderer {
     private app: PIXI.Application;
     private container: PIXI.Container;

@@ -1,9 +1,7 @@
 // web/src/transitions.ts
 /**
- * Manages room transition animations with directional slide effects.
+ * Manages room transition animations with directional slide + fade-to-black effects.
  */
-
-import { Config } from './config';
 
 /** Direction of room transition */
 export type TransitionDirection = {
@@ -24,14 +22,16 @@ export type ShakeState = {
     active: boolean;
     intensity: number;  // Current shake intensity (decays over time)
     timeRemaining: number;  // Seconds remaining
+    totalDuration: number;  // Original duration for decay calculation
 };
 
 /**
- * Manages smooth directional slide transitions between rooms.
+ * Manages smooth directional slide + fade-to-black transitions between rooms,
+ * plus screen shake.
  *
- * When a room transition is detected:
- * 1. Phase 1 (slide-out): Current room slides off-screen in direction of movement
- * 2. Phase 2 (slide-in): New room slides in from opposite side
+ * Room transition phases:
+ * 1. Phase 1 (slide-out): Current room slides off-screen; screen fades to black.
+ * 2. Phase 2 (slide-in): New room slides in from opposite side; screen fades back in.
  */
 export class TransitionManager {
     private state: TransitionState = {
@@ -44,10 +44,11 @@ export class TransitionManager {
     private shakeState: ShakeState = {
         active: false,
         intensity: 0,
-        timeRemaining: 0
+        timeRemaining: 0,
+        totalDuration: 0,
     };
 
-    /** Duration of each phase in seconds */
+    /** Duration of each transition phase in seconds */
     private readonly phaseDuration = 0.15;
 
     /** Default shake duration in seconds */
@@ -71,10 +72,12 @@ export class TransitionManager {
      * @param duration - Duration in seconds (default 0.3)
      */
     startShake(intensity: number = 1, duration?: number): void {
+        const dur = duration ?? this.shakeDuration;
         this.shakeState = {
             active: true,
             intensity: Math.max(0, Math.min(1, intensity)),
-            timeRemaining: duration ?? this.shakeDuration
+            timeRemaining: dur,
+            totalDuration: dur,
         };
     }
 
@@ -137,7 +140,8 @@ export class TransitionManager {
                 this.shakeState = {
                     active: false,
                     intensity: 0,
-                    timeRemaining: 0
+                    timeRemaining: 0,
+                    totalDuration: 0,
                 };
             }
         }
@@ -181,6 +185,30 @@ export class TransitionManager {
     }
 
     /**
+     * Get the fade-to-black alpha for the current room transition.
+     *
+     * During slide-out: fades from 0 → 1 (screen goes black).
+     * During slide-in:  fades from 1 → 0 (screen reveals new room).
+     * Outside transition: returns 0 (fully transparent).
+     *
+     * @returns Alpha value 0–1 for a black overlay
+     */
+    getFadeAlpha(): number {
+        if (!this.state.active) {
+            return 0;
+        }
+
+        const { phase, progress } = this.state;
+        if (phase === 'slide-out') {
+            // Fade in: 0 → 1
+            return this.easeInOutQuad(progress);
+        } else {
+            // slide-in: Fade out: 1 → 0
+            return 1 - this.easeInOutQuad(progress);
+        }
+    }
+
+    /**
      * Calculate current shake offset with decay.
      */
     private getShakeOffset(): { x: number; y: number } {
@@ -189,7 +217,7 @@ export class TransitionManager {
         }
 
         // Calculate decay factor (1 at start, 0 at end)
-        const decay = this.shakeState.timeRemaining / this.shakeDuration;
+        const decay = this.shakeState.timeRemaining / this.shakeState.totalDuration;
 
         // Random offset scaled by intensity and decay
         const magnitude = this.maxShakeOffset * this.shakeState.intensity * decay;

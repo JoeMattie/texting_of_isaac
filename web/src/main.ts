@@ -4,12 +4,13 @@ import './ui/styles.css';
 import * as PIXI from 'pixi.js';
 import { NetworkClient, GameState } from './network';
 import { SpriteManager } from './sprites';
-import { GameRenderer } from './renderer';
+import { GameRenderer, SHAKE_CONFIG } from './renderer';
 import { UIManager } from './ui';
 import { AnimationManager, EntityType } from './animations';
 import { InterpolationManager } from './interpolation';
 import { ParticleManager } from './particles';
 import { TransitionManager } from './transitions';
+import { DamageNumberManager } from './damageNumbers';
 import { GameOverlay } from './ui/GameOverlay';
 import { Minimap } from './ui/Minimap';
 
@@ -44,7 +45,11 @@ async function main() {
         return;
     }
 
-    // Initialize renderer (using gameContainer for transitions)
+    // Create game container for all game content (allows transition effects)
+    const gameContainer = new PIXI.Container();
+    app.stage.addChild(gameContainer);
+
+    // Initialize renderer (uses gameContainer for transitions)
     const renderer = new GameRenderer(app, spriteManager, gameContainer);
 
     // Initialize animation manager
@@ -53,17 +58,24 @@ async function main() {
     // Initialize interpolation manager
     const interpolationManager = new InterpolationManager();
 
-    // Create game container for all game content (allows transition effects)
-    const gameContainer = new PIXI.Container();
-    app.stage.addChild(gameContainer);
-
     // Initialize particle manager (inside game container)
     const particleContainer = new PIXI.Container();
     gameContainer.addChild(particleContainer);
     const particleManager = new ParticleManager(particleContainer);
 
+    // Initialize damage number manager (above particles, but inside game container)
+    const damageContainer = new PIXI.Container();
+    gameContainer.addChild(damageContainer);
+    const damageNumbers = new DamageNumberManager(damageContainer);
+
     // Initialize transition manager for room transitions
     const transitionManager = new TransitionManager(1920, 640);
+
+    // Full-screen black overlay for fade-to-black during room transitions
+    const fadeOverlay = new PIXI.Graphics();
+    fadeOverlay.rect(0, 0, 1920, 640).fill({ color: 0x000000 });
+    fadeOverlay.alpha = 0;
+    app.stage.addChild(fadeOverlay); // Above gameContainer so it covers everything
 
     // Track previous state for change detection
     let previousState: GameState | null = null;
@@ -105,7 +117,7 @@ async function main() {
         },
         onMainMenu: () => {
             networkClient.disconnect();
-            uiManager.showLanding();
+            uiManager.showLandingPage();
             gameOverlay.hide();
             minimap.hide();
         }
@@ -128,7 +140,7 @@ async function main() {
             if (previousRoomPosition && currentRoomPosition) {
                 if (previousRoomPosition[0] !== currentRoomPosition[0] ||
                     previousRoomPosition[1] !== currentRoomPosition[1]) {
-                    // Room transition detected - trigger slide effect
+                    // Room transition detected – trigger slide + fade effect
                     transitionManager.startTransition(previousRoomPosition, currentRoomPosition);
                     // Clear interpolation targets for smooth new room entry
                     interpolationManager.clear();
@@ -147,7 +159,16 @@ async function main() {
 
             // Detect state changes for triggered animations
             if (previousState) {
-                detectStateChanges(previousState, state, animationManager, interpolationManager, particleManager, transitionManager);
+                detectStateChanges(
+                    previousState,
+                    state,
+                    animationManager,
+                    interpolationManager,
+                    particleManager,
+                    transitionManager,
+                    damageNumbers,
+                    uiManager,
+                );
             }
             previousState = state;
 
@@ -221,12 +242,16 @@ async function main() {
         animationManager.update(dt);
         interpolationManager.update(dt);
         particleManager.update(dt);
+        damageNumbers.update(dt);
         transitionManager.update(dt);
 
         // Apply transition offset to game container
         const offset = transitionManager.getOffset();
         gameContainer.x = offset.x;
         gameContainer.y = offset.y;
+
+        // Update fade overlay alpha for room transitions
+        fadeOverlay.alpha = transitionManager.getFadeAlpha();
 
         // Apply interpolated positions to sprites
         const sprites = renderer.getEntitySprites();
@@ -271,12 +296,6 @@ async function main() {
 
 /**
  * Detect state changes and trigger appropriate animations.
- * @param prev - Previous game state
- * @param curr - Current game state
- * @param animationManager - Animation manager instance
- * @param interpolationManager - Interpolation manager instance
- * @param particleManager - Particle manager instance
- * @param transitionManager - Transition manager for screen shake
  */
 function detectStateChanges(
     prev: GameState,
@@ -284,16 +303,25 @@ function detectStateChanges(
     animationManager: AnimationManager,
     interpolationManager: InterpolationManager,
     particleManager: ParticleManager,
-    transitionManager: TransitionManager
+    transitionManager: TransitionManager,
+    damageNumbers: DamageNumberManager,
+    uiManager: UIManager,
 ): void {
     // Detect player hit
     if (prev.player && curr.player) {
         const prevHealth = prev.player.components.health?.current;
         const currHealth = curr.player.components.health?.current;
         if (prevHealth !== undefined && currHealth !== undefined && currHealth < prevHealth) {
+            const damageTaken = prevHealth - currHealth;
             animationManager.triggerFlash(curr.player.id);
-            // Trigger screen shake on player damage
-            transitionManager.startShake(0.8);
+            // Medium screen shake on player damage
+            transitionManager.startShake(SHAKE_CONFIG.medium.intensity, SHAKE_CONFIG.medium.duration);
+            // Spawn hit sparks on the player
+            const playerPos = interpolationManager.getPosition(curr.player.id);
+            if (playerPos) {
+                particleManager.spawnHitSpark(playerPos.currentX, playerPos.currentY, 'enemy_projectile');
+                damageNumbers.add(playerPos.currentX, playerPos.currentY - 16, damageTaken, 'player');
+            }
         }
     }
 
@@ -312,19 +340,32 @@ function detectStateChanges(
                 const prevHealth = prevEntity.components.health?.current;
                 const currHealth = currEntity.components.health?.current;
                 if (prevHealth !== undefined && currHealth !== undefined && currHealth < prevHealth) {
+                    const damageTaken = prevHealth - currHealth;
                     animationManager.triggerFlash(currEntity.id);
+
+                    // Heavy shake for tank (boss-tier), light for others
+                    const isTank = currEntity.type === 'enemy_tank';
+                    transitionManager.startShake(
+                        isTank ? SHAKE_CONFIG.heavy.intensity : SHAKE_CONFIG.light.intensity,
+                        isTank ? SHAKE_CONFIG.heavy.duration  : SHAKE_CONFIG.light.duration,
+                    );
+
+                    const enemyPos = interpolationManager.getPosition(currEntity.id);
+                    if (enemyPos) {
+                        particleManager.spawnHitSpark(enemyPos.currentX, enemyPos.currentY, currEntity.type);
+                        damageNumbers.add(enemyPos.currentX, enemyPos.currentY - 16, damageTaken, 'enemy');
+                    }
                 }
             }
         }
     }
 
     // Detect room cleared (doors unlock)
-    // Check if enemies existed before but none now
     const prevEnemies = prev.entities.filter(e => e.type.startsWith('enemy_')).length;
     const currEnemies = curr.entities.filter(e => e.type.startsWith('enemy_')).length;
 
     if (prevEnemies > 0 && currEnemies === 0) {
-        // Room just cleared - shimmer all doors
+        // Room just cleared – shimmer all doors
         for (const entity of curr.entities) {
             if (entity.type === 'door') {
                 const pos = interpolationManager.getPosition(entity.id);
@@ -341,13 +382,23 @@ function detectStateChanges(
         if (!currIds.has(prevEntity.id)) {
             const pos = interpolationManager.getPosition(prevEntity.id);
 
-            // Enemy death = explosion
+            // Enemy death = explosion burst
             if (prevEntity.type.startsWith('enemy_') && pos) {
                 particleManager.spawnExplosion(pos.currentX, pos.currentY, prevEntity.type);
             }
 
-            // Item pickup = sparkle
-            if (['heart', 'coin', 'bomb', 'item'].includes(prevEntity.type) && pos) {
+            // Heart pickup
+            if (prevEntity.type === 'heart' && pos) {
+                particleManager.spawnHeartPickup(pos.currentX, pos.currentY);
+            }
+
+            // Coin pickup
+            if (prevEntity.type === 'coin' && pos) {
+                particleManager.spawnCoinPickup(pos.currentX, pos.currentY);
+            }
+
+            // Bomb or generic item pickup
+            if ((prevEntity.type === 'bomb' || prevEntity.type === 'item') && pos) {
                 particleManager.spawnSparkle(pos.currentX, pos.currentY);
             }
 
@@ -360,9 +411,6 @@ function detectStateChanges(
 
 /**
  * Apply animation transforms to entity sprites.
- * @param renderer - Game renderer instance
- * @param state - Current game state
- * @param animationManager - Animation manager instance
  */
 function applyAnimations(renderer: GameRenderer, state: GameState, animationManager: AnimationManager): void {
     const sprites = renderer.getEntitySprites();
