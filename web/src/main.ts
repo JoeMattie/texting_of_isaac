@@ -4,6 +4,7 @@ import './ui/styles.css';
 import * as PIXI from 'pixi.js';
 import { NetworkClient, GameState } from './network';
 import { SpriteManager } from './sprites';
+import { LevelSpriteManager } from './levelSprites';
 import { GameRenderer, SHAKE_CONFIG } from './renderer';
 import { UIManager } from './ui';
 import { AnimationManager, EntityType } from './animations';
@@ -45,12 +46,16 @@ async function main() {
         return;
     }
 
+    // Initialize level sprite manager (loads asynchronously; renderer uses it when ready)
+    const levelSprites = new LevelSpriteManager();
+    levelSprites.load().catch(err => console.warn('Level sprites load error:', err));
+
     // Create game container for all game content (allows transition effects)
     const gameContainer = new PIXI.Container();
     app.stage.addChild(gameContainer);
 
     // Initialize renderer (uses gameContainer for transitions)
-    const renderer = new GameRenderer(app, spriteManager, gameContainer);
+    const renderer = new GameRenderer(app, spriteManager, levelSprites, gameContainer);
 
     // Initialize animation manager
     const animationManager = new AnimationManager();
