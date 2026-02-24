@@ -1031,8 +1031,8 @@ def test_reposition_player_after_transition_from_north():
     # Reposition player after entering from north
     collision_system._reposition_player_after_transition(player, player_pos, "north")
 
-    # Should be at south wall, slightly inward
-    assert player_pos.y == Config.ROOM_HEIGHT - 2
+    # Should be at south wall, 2+ units from south door to avoid immediate re-collision
+    assert player_pos.y == Config.ROOM_HEIGHT - 3
     assert player_pos.x == Config.ROOM_WIDTH / 2
 
 
@@ -1052,8 +1052,8 @@ def test_reposition_player_after_transition_from_south():
     # Reposition player after entering from south
     collision_system._reposition_player_after_transition(player, player_pos, "south")
 
-    # Should be at north wall, slightly inward
-    assert player_pos.y == 1
+    # Should be at north wall, 2+ units from north door to avoid immediate re-collision
+    assert player_pos.y == 2
     assert player_pos.x == Config.ROOM_WIDTH / 2
 
 
@@ -1073,8 +1073,8 @@ def test_reposition_player_after_transition_from_east():
     # Reposition player after entering from east
     collision_system._reposition_player_after_transition(player, player_pos, "east")
 
-    # Should be at west wall, slightly inward
-    assert player_pos.x == 1
+    # Should be at west wall, 2+ units from west door to avoid immediate re-collision
+    assert player_pos.x == 2
     assert player_pos.y == Config.ROOM_HEIGHT / 2
 
 
@@ -1094,8 +1094,8 @@ def test_reposition_player_after_transition_from_west():
     # Reposition player after entering from west
     collision_system._reposition_player_after_transition(player, player_pos, "west")
 
-    # Should be at east wall, slightly inward
-    assert player_pos.x == Config.ROOM_WIDTH - 2
+    # Should be at east wall, 2+ units from east door to avoid immediate re-collision
+    assert player_pos.x == Config.ROOM_WIDTH - 3
     assert player_pos.y == Config.ROOM_HEIGHT / 2
 
 

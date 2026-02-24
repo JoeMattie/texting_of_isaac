@@ -388,7 +388,7 @@ def test_full_room_transition():
 
     # Verify player was repositioned to south side of room 2
     player_pos = esper.component_for_entity(player, Position)
-    assert player_pos.y == Config.ROOM_HEIGHT - 2  # Near south wall
+    assert player_pos.y == Config.ROOM_HEIGHT - 3  # Near south wall, 2+ units from door
     assert player_pos.x == Config.ROOM_WIDTH / 2   # Centered horizontally
 
 

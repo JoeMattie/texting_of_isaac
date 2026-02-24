@@ -10,7 +10,7 @@ from src.entities.trapdoor import create_trapdoor
 from src.components.dungeon import Door
 from src.components.core import Sprite, Position
 from src.components.game import Enemy, Player
-from src.components.combat import Collider
+from src.components.combat import Collider, Projectile
 from src.components.boss import Boss, Trapdoor
 from src.config import Config
 
@@ -53,10 +53,13 @@ class RoomManager(esper.Processor):
         for entity, (door,) in esper.get_components(Door):
             esper.delete_entity(entity, immediate=True)
 
-        # TODO: Implement additional entity despawning in integration tasks
-        # - Delete all enemies (esper.get_components(Enemy))
-        # - Delete all projectiles (esper.get_components(Projectile))
-        # - Keep player entity
+        # Delete all enemies
+        for entity, (enemy,) in esper.get_components(Enemy):
+            esper.delete_entity(entity, immediate=True)
+
+        # Delete all projectiles
+        for entity, (projectile,) in esper.get_components(Projectile):
+            esper.delete_entity(entity, immediate=True)
 
     def spawn_room_contents(self) -> None:
         """Spawn entities for current room.

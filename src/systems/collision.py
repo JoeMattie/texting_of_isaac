@@ -5,6 +5,7 @@ from src.components.core import Position, Health, Velocity
 from src.components.combat import Collider, Projectile
 from src.components.dungeon import Door
 from src.components.game import Enemy, Player
+from src.game.dungeon import RoomType
 
 
 class CollisionSystem(esper.Processor):
@@ -184,6 +185,14 @@ class CollisionSystem(esper.Processor):
 
             esper.delete_entity(enemy)
 
+            # Check if this was the last enemy in a combat room
+            if (self.room_manager and
+                    self.room_manager.current_room.room_type == RoomType.COMBAT and
+                    not self.room_manager.current_room.cleared):
+                alive_enemies = [e for e, _ in esper.get_components(Enemy) if esper.entity_exists(e)]
+                if not alive_enemies:
+                    self.room_manager.on_room_cleared()
+
     def _projectile_hit_player(self, projectile: int, player: int):
         """Handle enemy projectile hitting player."""
         from src.components.game import Invincible, Dead
@@ -244,18 +253,18 @@ class CollisionSystem(esper.Processor):
         from src.config import Config
 
         if entry_direction == "north":
-            # Entered from north, spawn at south
-            player_pos.y = Config.ROOM_HEIGHT - 2
+            # Entered from north, spawn at south — stay 2+ units from the south door
+            player_pos.y = Config.ROOM_HEIGHT - 3
             player_pos.x = Config.ROOM_WIDTH / 2
         elif entry_direction == "south":
-            # Entered from south, spawn at north
-            player_pos.y = 1
+            # Entered from south, spawn at north — stay 2+ units from the north door
+            player_pos.y = 2
             player_pos.x = Config.ROOM_WIDTH / 2
         elif entry_direction == "east":
-            # Entered from east, spawn at west
-            player_pos.x = 1
+            # Entered from east, spawn at west — stay 2+ units from the west door
+            player_pos.x = 2
             player_pos.y = Config.ROOM_HEIGHT / 2
         elif entry_direction == "west":
-            # Entered from west, spawn at east
-            player_pos.x = Config.ROOM_WIDTH - 2
+            # Entered from west, spawn at east — stay 2+ units from the east door
+            player_pos.x = Config.ROOM_WIDTH - 3
             player_pos.y = Config.ROOM_HEIGHT / 2
